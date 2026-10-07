@@ -37,7 +37,9 @@ dot.PRD(이하 "서비스")는 개인정보 보호법을 지키며, 이용자의
 보관 기간이 끝나거나 처리 목적이 달성되면 지체 없이 복구할 수 없는 방법으로 파기합니다.
 
 ## 6. 개인정보 보호책임자
-성명·연락처: 서비스 오픈 전에 기재 예정
+운영자: MIYA STUDIO
+
+연락처: heeyoung1101yang@naver.com
 `;
 
 export default function PrivacyPage() {
