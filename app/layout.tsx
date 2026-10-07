@@ -30,6 +30,8 @@ export const metadata: Metadata = {
   },
   description:
     "아이디어 한 줄을 넣으면 질문 5~10개로 빈 곳을 채운 뒤, 클로드 코드에 바로 넣을 수 있는 PRD·작업 단계·CLAUDE.md를 만들어 드려요.",
+  // 구글 서치 콘솔 사이트 소유 확인 (구글 로그인 브랜드 인증에 필요)
+  verification: { google: "QNvlDg01g5qZ-k-AqYKH7DMcGIs0PoLPEuT-viW9lXc" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

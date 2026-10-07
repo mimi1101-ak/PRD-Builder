@@ -42,7 +42,7 @@
 2. ~~로그인 후 브라우저 확인~~ 완료(구글 계정, 테스트 크레딧 3 지급): PRD → 잠금 해제(크레딧 3→2, 작업 단계 14단계 카드) → CLAUDE.md → 섹션 다시 쓰기(3→2회) → zip(docs/PRD.md·docs/TASKS.md·CLAUDE.md).
    - 고친 것: 잠금 해제 후 헤더의 크레딧 숫자가 새로고침 전까지 안 바뀌던 문제 → `components/results/result-view.tsx` 에서 크레딧이 바뀌면 `router.refresh()`. 다음 잠금 해제 때 바로 바뀌는지 한 번 더 확인할 것.
 3. 토스페이먼츠 테스트 키 받으면 `.env.local` 에 넣고 결제 테스트.
-4. 배포(Vercel): 환경변수 6개, Supabase Redirect URLs 에 배포 주소 추가.
+4. ~~배포(Vercel)~~ 완료(2026-10-07): https://dot-prd.vercel.app (GitHub main 자동 배포, Vercel 프로젝트 이름 `dot-prd.vercel.app`). 환경변수 4개(토스 2개는 키 없어서 뺌). Supabase Site URL·Redirect URLs 에 배포 주소 등록. 배포 사이트 로그인 확인 필요.
 
 ## 알아 둘 것
 
