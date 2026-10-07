@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AlertCircle, Download, FileArchive, Loader2, Lock, MessageSquare, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -15,13 +15,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Markdown } from "@/components/markdown";
-import { CopyButton, DocBody, TaskSteps, type RewriteTarget } from "@/components/results/doc-body";
+import { BlackHole } from "@/components/black-hole";
+import { Markdown, headingId, splitHeadingNumber } from "@/components/markdown";
+import { CopyButton, DocBody, TaskSteps, stepAnchor, type RewriteTarget } from "@/components/results/doc-body";
 import { LockedPreview } from "@/components/results/locked-preview";
 import { RewriteDialog } from "@/components/results/rewrite-dialog";
 import { DOC_FILES, DOC_KINDS, DOC_LABELS, REWRITES_PER_CREDIT, type DocKind, type ProjectView } from "@/lib/domain";
 import { downloadText, downloadZip, slugify } from "@/lib/download";
+import { parseTaskSteps, splitSections } from "@/lib/markdown";
 import { readJsonError, readNdjson } from "@/lib/ndjson";
+import { cn } from "@/lib/utils";
 import type { DocState } from "@/lib/projects";
 
 type UiStatus = "missing" | "generating" | "waiting" | "ready" | "failed";
@@ -84,6 +87,15 @@ export function ResultView({
   const [tab, setTab] = useState<DocKind>("prd");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [rewrite, setRewrite] = useState<{ kind: DocKind; target: RewriteTarget } | null>(null);
+
+  // 크레딧이 바뀌면 헤더(서버 컴포넌트)의 숫자도 다시 그린다
+  const router = useRouter();
+  const shownCredits = useRef(initialCredits);
+  useEffect(() => {
+    if (credits === shownCredits.current) return;
+    shownCredits.current = credits;
+    router.refresh();
+  }, [credits, router]);
 
   const docsRef = useRef(docs);
   const unlockedRef = useRef(unlocked);
@@ -266,45 +278,93 @@ export function ResultView({
 
   const paidBusy = docs.tasks.status === "generating" || docs.claude_md.status === "generating";
   const allReady = DOC_KINDS.every((k) => docs[k].status === "ready");
+  const isLocked = (kind: DocKind) =>
+    kind !== "prd" && !unlocked && docs[kind].status !== "generating" && docs[kind].status !== "failed";
+  const active = docs[tab];
+  const activeFile = DOC_FILES[tab];
+  const showTools = active.status === "ready" && !isLocked(tab);
+
+  function moveTab(e: React.KeyboardEvent, kind: DocKind) {
+    const i = DOC_KINDS.indexOf(kind);
+    const next = e.key === "ArrowRight" ? DOC_KINDS[(i + 1) % 3] : e.key === "ArrowLeft" ? DOC_KINDS[(i + 2) % 3] : null;
+    if (!next) return;
+    e.preventDefault();
+    setTab(next);
+    document.getElementById(`tab-${next}`)?.focus();
+  }
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 pb-24 pt-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-medium text-brand">결과 문서</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{project.title}</h1>
-          {project.summary.one_liner && (
-            <p className="mt-1 text-sm text-muted-foreground">{project.summary.one_liner}</p>
+    <main className="relative w-full">
+      <BlackHole variant="corner" />
+      <div className="relative z-10 mx-auto w-full max-w-[1280px] px-4 pb-28 pt-10 sm:px-8 lg:px-12">
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <div className="min-w-0">
+            <p className="mono-label flex gap-3.5 text-muted-foreground">
+              <span>Result</span>
+              <span>{formatDate(project.createdAt)}</span>
+            </p>
+            <h1 className="display-title mt-4 break-keep text-[clamp(40px,6vw,80px)]">{project.title}</h1>
+            {project.summary.one_liner && (
+              <p className="mt-3 text-[15.5px] text-muted-foreground">{project.summary.one_liner}</p>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            <Button asChild variant="ghost">
+              <Link href={`/p/${projectId}/chat`}>
+                <MessageSquare /> 대화 보기
+              </Link>
+            </Button>
+            <Button onClick={downloadAll} disabled={unlocked && !allReady}>
+              {unlocked ? <FileArchive /> : <Lock />}세 파일 한 번에 받기 (.zip)
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-11 flex items-center gap-3 border-b">
+          <div role="tablist" aria-label="문서" className="flex gap-6 overflow-x-auto [scrollbar-width:none] sm:gap-8">
+            {DOC_KINDS.map((kind, i) => (
+              <button
+                key={kind}
+                id={`tab-${kind}`}
+                type="button"
+                role="tab"
+                aria-selected={tab === kind}
+                aria-controls={`panel-${kind}`}
+                tabIndex={tab === kind ? 0 : -1}
+                onClick={() => setTab(kind)}
+                onKeyDown={(e) => moveTab(e, kind)}
+                className={cn(
+                  "relative flex items-center gap-2.5 whitespace-nowrap pb-[15px] pt-4 text-[14.5px] text-muted-foreground transition-colors hover:text-foreground",
+                  tab === kind &&
+                    "text-foreground after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-foreground",
+                )}
+              >
+                <span className="font-mono text-[10.5px]">{String(i + 1).padStart(2, "0")}</span>
+                {DOC_FILES[kind].name}
+                {kind !== "prd" && !unlocked && <Lock className="size-3" />}
+                {docs[kind].status === "generating" && <Loader2 className="size-3 animate-spin" />}
+              </button>
+            ))}
+          </div>
+          {showTools && (
+            <div className="ml-auto flex shrink-0 items-center gap-1">
+              <span className="mr-2 hidden font-mono text-[11px] text-ink-4 md:inline">
+                {tab === "claude_md" ? "프로젝트 맨 위 CLAUDE.md" : `${activeFile.zipPath} 로 저장`}
+              </span>
+              <CopyButton text={active.content} />
+              <Button size="sm" variant="ghost" onClick={() => downloadText(activeFile.name, active.content)}>
+                <Download /> .md
+              </Button>
+            </div>
           )}
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button asChild variant="ghost" size="sm">
-            <Link href={`/p/${projectId}/chat`}>
-              <MessageSquare /> 대화 보기
-            </Link>
-          </Button>
-          <Button size="sm" onClick={downloadAll} disabled={unlocked && !allReady}>
-            {unlocked ? <FileArchive /> : <Lock />}세 파일 한 번에 받기 (zip)
-          </Button>
-        </div>
-      </div>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as DocKind)} className="mt-6">
-        <TabsList>
-          {DOC_KINDS.map((kind) => (
-            <TabsTrigger key={kind} value={kind} className="gap-1.5">
-              {kind !== "prd" && !unlocked && <Lock className="size-3.5" />}
-              {docs[kind].status === "generating" && <Loader2 className="size-3.5 animate-spin" />}
-              {DOC_LABELS[kind]}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        {DOC_KINDS.map((kind) => (
-          <TabsContent key={kind} value={kind} className="mt-4">
-            {kind !== "prd" && !unlocked && docs[kind].status !== "generating" && docs[kind].status !== "failed" ? (
+        <div className="mt-12 grid gap-[clamp(24px,6vw,96px)] lg:grid-cols-[210px_minmax(0,1fr)]">
+          <Toc kind={tab} doc={active} locked={isLocked(tab)} />
+          <div id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`} className="min-w-0 max-w-[740px]">
+            {isLocked(tab) ? (
               <LockedPreview
-                kind={kind}
+                kind={tab as Exclude<DocKind, "prd">}
                 credits={credits}
                 projectId={projectId}
                 busy={paidBusy}
@@ -312,29 +372,29 @@ export function ResultView({
               />
             ) : (
               <DocPanel
-                kind={kind}
-                doc={docs[kind]}
+                kind={tab}
+                doc={active}
                 projectId={projectId}
                 unlocked={unlocked}
                 rewritesLeft={rewritesLeft}
-                onRetry={() => (kind === "prd" ? void generate("prd") : void generatePaidDocs())}
-                onRewrite={(target) => setRewrite({ kind, target })}
+                onRetry={() => (tab === "prd" ? void generate("prd") : void generatePaidDocs())}
+                onRewrite={(target) => setRewrite({ kind: tab, target })}
               />
             )}
-          </TabsContent>
-        ))}
-      </Tabs>
+          </div>
+        </div>
+      </div>
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>크레딧 1건을 사용할까요?</DialogTitle>
+            <DialogTitle className="font-display text-2xl font-light tracking-[-0.03em]">크레딧 1건을 사용할까요?</DialogTitle>
             <DialogDescription>
               이 프로젝트의 작업 단계와 CLAUDE.md를 만들고, zip 다운로드와 섹션 다시 쓰기 {REWRITES_PER_CREDIT}회를 쓸
               수 있어요. 한 번 연 프로젝트는 계속 볼 수 있어요.
             </DialogDescription>
           </DialogHeader>
-          <div className="rounded-lg bg-muted/60 px-4 py-3 text-sm">
+          <div className="rounded-xl border px-4 py-3 text-sm">
             남은 크레딧 <b>{credits}건</b> → <b>{Math.max(0, credits - 1)}건</b>
             <p className="mt-1 text-xs text-muted-foreground">문서 생성에 실패하면 크레딧은 차감되지 않아요.</p>
           </div>
@@ -343,9 +403,7 @@ export function ResultView({
               취소
             </Button>
             {credits > 0 ? (
-              <Button onClick={unlock} className="bg-brand text-brand-foreground hover:bg-brand/90">
-                크레딧 1건 사용
-              </Button>
+              <Button onClick={unlock}>크레딧 1건 사용</Button>
             ) : (
               <Button asChild>
                 <Link href={`/credits?next=${encodeURIComponent(`/p/${projectId}`)}`}>크레딧 구매하기</Link>
@@ -371,6 +429,103 @@ export function ResultView({
   );
 }
 
+function formatDate(iso: string) {
+  const parts = new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date(iso));
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${get("year")}.${get("month")}.${get("day")}`;
+}
+
+type TocItem = { id: string; no: string; label: string };
+
+// 왼쪽 목차: PRD·CLAUDE.md 는 "## 섹션", 작업 단계는 단계 카드로 건너뛴다 (넓은 화면에서만)
+function Toc({ kind, doc, locked }: { kind: DocKind; doc: DocUi; locked: boolean }) {
+  const items = useMemo<TocItem[]>(() => {
+    if (locked || !doc.content) return [];
+    if (kind === "tasks") {
+      const parsed = parseTaskSteps(doc.content);
+      if (parsed) {
+        return parsed.steps.map((s) => ({
+          id: stepAnchor(s.number),
+          no: String(s.number).padStart(2, "0"),
+          label: s.title,
+        }));
+      }
+    }
+    return splitSections(doc.content).map((s, i) => {
+      const parts = splitHeadingNumber(s.title.replace(/[*_`]/g, ""));
+      return {
+        id: headingId(s.title),
+        no: parts?.no ?? String(i + 1).padStart(2, "0"),
+        label: parts?.rest ?? s.title.replace(/[*_`]/g, ""),
+      };
+    });
+  }, [kind, doc.content, locked]);
+  const activeId = useActiveId(items);
+
+  return (
+    <nav aria-label="목차" className="hidden self-start lg:sticky lg:top-[calc(3.5rem+28px)] lg:block">
+      {items.length > 0 && (
+        <>
+          <span className="mono-label mb-3 block text-[10px] text-ink-4">
+            {kind === "tasks" ? `Steps · ${items.length}` : "Contents"}
+          </span>
+          <ul>
+            {items.map((item) => (
+              <li key={item.id}>
+                <a
+                  href={`#${item.id}`}
+                  className={cn(
+                    "grid grid-cols-[30px_minmax(0,1fr)] py-[7px] text-[13.5px] text-muted-foreground transition-colors hover:text-foreground",
+                    activeId === item.id && "text-foreground",
+                  )}
+                >
+                  <span className="pt-0.5 font-mono text-[11px]">{item.no}</span>
+                  <span className="truncate">{item.label}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </nav>
+  );
+}
+
+// 화면 위쪽 30% 선을 지난 마지막 제목을 "지금 읽는 곳"으로 본다
+function useActiveId(items: TocItem[]) {
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const ids = items.map((i) => i.id).join("|");
+  useEffect(() => {
+    const list = ids ? ids.split("|") : [];
+    if (!list.length) return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      let current = list[0];
+      for (const id of list) {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top < window.innerHeight * 0.3) current = id;
+      }
+      setActiveId(current);
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [ids]);
+  return activeId;
+}
+
 function DocPanel({
   kind,
   doc,
@@ -390,8 +545,8 @@ function DocPanel({
 }) {
   if (doc.status === "generating") {
     return (
-      <div className="rounded-xl border bg-card p-6">
-        <p className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
+      <div>
+        <p className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
           {DOC_LABELS[kind]}를 쓰고 있어요. 1~2분 정도 걸려요.
         </p>
@@ -399,7 +554,7 @@ function DocPanel({
           <Markdown>{doc.content}</Markdown>
         ) : (
           <div className="space-y-3">
-            <Skeleton className="h-7 w-2/3" />
+            <Skeleton className="h-9 w-2/3" />
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-5/6" />
             <Skeleton className="h-4 w-4/6" />
@@ -411,7 +566,7 @@ function DocPanel({
 
   if (doc.status === "waiting") {
     return (
-      <div className="flex items-center gap-2 rounded-xl border bg-card p-6 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 rounded-2xl border p-6 text-sm text-muted-foreground">
         <Loader2 className="size-4 animate-spin" /> 다른 창에서 이 문서를 만드는 중이에요. 끝나면 여기에 바로 보여요.
       </div>
     );
@@ -420,7 +575,7 @@ function DocPanel({
   if (doc.status === "failed" || doc.status === "missing") {
     const noRetry = doc.errorCode === "daily_limit";
     return (
-      <div className="rounded-xl border bg-card p-6">
+      <div className="rounded-2xl border p-6">
         <p className="flex items-start gap-2 text-sm">
           <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
           {doc.error ?? `${DOC_LABELS[kind]}를 아직 만들지 못했어요.`}
@@ -445,28 +600,16 @@ function DocPanel({
   const file = DOC_FILES[kind];
   const canRewrite = unlocked && rewritesLeft > 0;
   return (
-    <div className="rounded-xl border bg-card">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2.5">
-        <p className="text-xs text-muted-foreground">
-          {kind === "claude_md"
-            ? "프로젝트 폴더 맨 위에 CLAUDE.md 로 저장하세요"
-            : `프로젝트 폴더의 ${file.zipPath} 로 저장하세요`}
-          {unlocked && ` · 다시 쓰기 ${rewritesLeft}회 남음`}
-        </p>
-        <div className="flex gap-1.5">
-          <CopyButton text={doc.content} />
-          <Button size="sm" variant="outline" onClick={() => downloadText(file.name, doc.content)}>
-            <Download /> .md
-          </Button>
-        </div>
-      </div>
-      <div className="px-5 py-6 sm:px-8">
-        {kind === "tasks" ? (
-          <TaskSteps projectId={projectId} content={doc.content} onRewrite={canRewrite ? onRewrite : undefined} />
-        ) : (
-          <DocBody content={doc.content} onRewrite={canRewrite ? onRewrite : undefined} />
-        )}
-      </div>
+    <div>
+      <p className="mb-5 font-mono text-[11px] text-ink-4">
+        {kind === "claude_md" ? "프로젝트 폴더 맨 위에 CLAUDE.md 로 저장" : `프로젝트 폴더의 ${file.zipPath} 로 저장`}
+        {unlocked && ` · 다시 쓰기 ${rewritesLeft}회 남음`}
+      </p>
+      {kind === "tasks" ? (
+        <TaskSteps projectId={projectId} content={doc.content} onRewrite={canRewrite ? onRewrite : undefined} />
+      ) : (
+        <DocBody content={doc.content} onRewrite={canRewrite ? onRewrite : undefined} />
+      )}
     </div>
   );
 }

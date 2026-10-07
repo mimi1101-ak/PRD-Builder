@@ -3,7 +3,6 @@ import { ArrowRight, Plus } from "lucide-react";
 import { getViewer } from "@/lib/access";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LoginButtons } from "@/components/login-buttons";
 import { SiteFooter } from "@/components/site-footer";
@@ -54,10 +53,13 @@ export default async function ProjectsPage() {
 
   return (
     <>
-      <main className="mx-auto w-full max-w-3xl px-4 pb-24 pt-8">
-        <div className="flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight">내 프로젝트</h1>
-          <Button asChild size="sm">
+      <main className="mx-auto w-full max-w-[880px] px-4 pb-24 pt-10 sm:px-8">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="mono-label text-muted-foreground">Projects</p>
+            <h1 className="display-title mt-3 text-[clamp(36px,5vw,56px)]">내 프로젝트</h1>
+          </div>
+          <Button asChild>
             <Link href="/">
               <Plus /> 새 아이디어
             </Link>
@@ -65,39 +67,50 @@ export default async function ProjectsPage() {
         </div>
 
         {!viewer.userId && (
-          <div className="mt-6 rounded-2xl border bg-card p-5">
-            <p className="font-medium">로그인하면 프로젝트가 계정에 저장돼요</p>
-            <p className="mt-1 text-sm text-muted-foreground">
+          <div className="mt-8 rounded-[20px] border p-6">
+            <p className="font-display text-xl font-light tracking-[-0.02em]">로그인하면 프로젝트가 계정에 저장돼요</p>
+            <p className="mt-1.5 text-sm text-muted-foreground">
               지금 보이는 목록은 이 브라우저에서만 볼 수 있어요. 로그인하면 다른 기기에서도 이어서 할 수 있어요.
             </p>
-            <LoginButtons next="/projects" className="mt-4 max-w-xs" />
+            <LoginButtons next="/projects" className="mt-5 max-w-xs" />
           </div>
         )}
 
         {rows.length === 0 ? (
-          <div className="mt-10 rounded-2xl border border-dashed p-10 text-center text-muted-foreground">
+          <div className="mt-10 rounded-[20px] border border-dashed border-line-strong p-12 text-center text-muted-foreground">
             아직 프로젝트가 없어요.{" "}
-            <Link href="/" className="font-medium text-foreground underline">
+            <Link href="/" className="font-medium text-foreground underline underline-offset-4">
               아이디어 한 줄
             </Link>
             로 시작해 보세요.
           </div>
         ) : (
-          <ul className="mt-6 divide-y rounded-2xl border bg-card">
-            {rows.map((p) => {
+          <ul className="mt-10 border-t">
+            {rows.map((p, i) => {
               const href = p.status === "done" ? `/p/${p.id}` : `/p/${p.id}/chat`;
               return (
-                <li key={p.id}>
-                  <Link href={href} className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/40">
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">{p.title || p.idea}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">{formatDate(p.created_at)}</p>
+                <li key={p.id} className="border-b">
+                  <Link
+                    href={href}
+                    className="group grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-4 py-5 transition-colors hover:bg-muted/50 sm:grid-cols-[48px_minmax(0,1fr)_auto_auto] sm:px-2"
+                  >
+                    <span className="font-mono text-[11px] text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
+                    <div className="min-w-0">
+                      <p className="truncate font-display text-[22px] font-light tracking-[-0.02em]">{p.title || p.idea}</p>
+                      <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">{formatDate(p.created_at)}</p>
                     </div>
-                    <Badge variant={p.status === "done" ? "default" : "secondary"}>{STATUS_LABEL[p.status]}</Badge>
-                    <span className="hidden text-sm text-muted-foreground sm:inline">
-                      {p.status === "done" ? "결과 보기" : "이어하기"}
+                    <span
+                      className={
+                        "rounded-full border px-2.5 py-1 text-xs " +
+                        (p.status === "done" ? "border-foreground bg-foreground text-background" : "border-line-strong text-ink-2")
+                      }
+                    >
+                      {STATUS_LABEL[p.status]}
                     </span>
-                    <ArrowRight className="size-4 text-muted-foreground" />
+                    <span className="hidden items-center gap-1.5 text-sm text-muted-foreground transition-colors group-hover:text-foreground sm:inline-flex">
+                      {p.status === "done" ? "결과 보기" : "이어하기"}
+                      <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                    </span>
                   </Link>
                 </li>
               );

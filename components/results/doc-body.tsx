@@ -8,30 +8,43 @@ import { Markdown } from "@/components/markdown";
 import { parseTaskSteps, splitSections, type Section, type TaskStep } from "@/lib/markdown";
 import { cn } from "@/lib/utils";
 
+async function copyText(text: string, onDone: () => void) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success("복사했어요");
+    onDone();
+  } catch {
+    toast.error("복사하지 못했어요. 직접 선택해 복사해 주세요.");
+  }
+}
+
 export function CopyButton({
   text,
   label = "복사",
   size = "sm",
-  variant = "outline",
+  variant = "ghost",
+  className,
 }: {
   text: string;
   label?: string;
   size?: "sm" | "xs";
   variant?: "outline" | "ghost" | "secondary";
+  className?: string;
 }) {
   const [copied, setCopied] = useState(false);
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      toast.success("복사했어요");
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      toast.error("복사하지 못했어요. 직접 선택해 복사해 주세요.");
-    }
-  }
   return (
-    <Button type="button" size={size} variant={variant} onClick={copy}>
+    <Button
+      type="button"
+      size={size}
+      variant={variant}
+      className={className}
+      onClick={() =>
+        void copyText(text, () => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        })
+      }
+    >
       {copied ? <Check /> : <Copy />}
       {label}
     </Button>
@@ -74,17 +87,18 @@ function SectionBlock({
   onRewrite: (target: RewriteTarget) => void;
 }) {
   return (
-    <div className="group relative">
-      <div className="absolute right-0 top-7 z-10 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100">
+    <div className="group relative mt-14">
+      <div className="absolute right-0 top-0 z-10 opacity-100 transition-opacity focus-within:opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
         <Button
           size="xs"
-          variant="secondary"
+          variant="ghost"
+          className="bg-background"
           onClick={() => onRewrite({ heading: section.heading, title: section.title })}
         >
           <PenLine /> 다시 쓰기
         </Button>
       </div>
-      <Markdown>{text}</Markdown>
+      <Markdown className="[&_h2]:pr-24">{text}</Markdown>
     </div>
   );
 }
@@ -116,6 +130,10 @@ function writeChecks(key: string, value: string) {
     // 무시
   }
   window.dispatchEvent(new Event(CHECKS_EVENT));
+}
+
+export function stepAnchor(n: number) {
+  return `step-${n}`;
 }
 
 // 작업 단계: 단계별 카드 + 체크박스
@@ -151,30 +169,40 @@ export function TaskSteps({
 
   if (!parsed) return <DocBody content={content} onRewrite={onRewrite} />;
 
+  const total = parsed.steps.length;
   const doneCount = parsed.steps.filter((s) => checked.includes(s.number)).length;
   return (
-    <div className="space-y-4">
-      {parsed.intro && <Markdown className="prose-h1:mb-2">{parsed.intro}</Markdown>}
-      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-        <span>
-          진행 {doneCount}/{parsed.steps.length}단계
+    <div>
+      {parsed.intro && <Markdown className="[&_blockquote]:border-l-0 [&_blockquote]:pl-0">{parsed.intro}</Markdown>}
+      <div className="mt-6 flex items-center gap-[18px]">
+        <span className="mono-label shrink-0 text-muted-foreground">
+          진행 {doneCount} / {total}
         </span>
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-brand transition-all"
-            style={{ width: `${(doneCount / parsed.steps.length) * 100}%` }}
-          />
+        <div
+          className="grid flex-1 gap-[3px]"
+          style={{ gridTemplateColumns: `repeat(${total}, minmax(0, 1fr))` }}
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={total}
+          aria-valuenow={doneCount}
+          aria-label="작업 단계 진행"
+        >
+          {parsed.steps.map((s) => (
+            <i key={s.number} className={cn("h-1.5 bg-paper-3", checked.includes(s.number) && "bg-foreground")} />
+          ))}
         </div>
       </div>
-      {parsed.steps.map((step) => (
-        <StepCard
-          key={step.heading}
-          step={step}
-          checked={checked.includes(step.number)}
-          onToggle={() => toggle(step.number)}
-          onRewrite={onRewrite}
-        />
-      ))}
+      <div className="mt-7">
+        {parsed.steps.map((step) => (
+          <StepCard
+            key={step.heading}
+            step={step}
+            checked={checked.includes(step.number)}
+            onToggle={() => toggle(step.number)}
+            onRewrite={onRewrite}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -191,43 +219,72 @@ function StepCard({
   onRewrite?: (target: RewriteTarget) => void;
 }) {
   const title = step.heading.replace(/^##\s+/, "");
+  const [copied, setCopied] = useState(false);
   return (
-    <div className={cn("rounded-xl border bg-card p-4 transition-colors", checked && "bg-muted/40")}>
-      <div className="flex items-start gap-3">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={onToggle}
-          aria-label={`${step.number}단계 완료`}
-          className="mt-1 size-4 shrink-0 accent-[var(--brand)]"
-        />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <h3 className={cn("font-semibold", checked && "text-muted-foreground line-through")}>
-              {step.number}단계. {step.title}
+    <section
+      id={stepAnchor(step.number)}
+      className="grid scroll-mt-20 gap-2.5 border-t py-9 sm:grid-cols-[96px_minmax(0,1fr)] sm:gap-5"
+    >
+      <div className={cn("font-display text-[44px] font-extralight leading-[0.85] tracking-[-0.05em] sm:text-[60px]", checked && "text-ink-4")}>
+        {String(step.number).padStart(2, "0")}
+        <span className="mono-label ml-2.5 align-middle text-[10px] text-ink-4 sm:ml-0 sm:mt-3.5 sm:block">Step</span>
+      </div>
+      <div className="min-w-0">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h3 className={cn("text-[19px] font-semibold leading-[1.45] tracking-[-0.02em]", checked && "text-muted-foreground line-through decoration-1")}>
+              {step.title}
             </h3>
+            {step.goal && <p className="mt-1.5 text-[14.5px] text-muted-foreground">{step.goal}</p>}
+          </div>
+          <div className="flex shrink-0 items-center gap-1 pt-0.5">
             {onRewrite && (
               <Button size="xs" variant="ghost" onClick={() => onRewrite({ heading: step.heading, title })}>
                 <PenLine /> 다시 쓰기
               </Button>
             )}
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-full px-2 py-1 text-[13px] text-muted-foreground has-checked:text-foreground">
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={onToggle}
+                aria-label={`${step.number}단계 완료`}
+                className="peer sr-only"
+              />
+              <span className="grid size-4 place-items-center border border-muted-foreground peer-checked:border-foreground peer-checked:bg-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-foreground/30">
+                <Check className="size-3 text-background" strokeWidth={3} />
+              </span>
+              완료
+            </label>
           </div>
-          {step.goal && <p className="mt-1 text-sm text-muted-foreground">목표: {step.goal}</p>}
-          <div className="relative mt-3">
-            <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-neutral-900 p-3 pr-20 text-[13px] leading-6 text-neutral-100">
+        </div>
+        {step.prompt && (
+          <div className="relative mt-[18px] rounded-[14px] bg-foreground px-[22px] py-5 text-[#e9e9e6]">
+            <p className="mono-label mb-2.5 text-[10px] text-[#8b8b87]">Prompt</p>
+            <button
+              type="button"
+              onClick={() =>
+                void copyText(step.prompt, () => {
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 1400);
+                })
+              }
+              className="mono-label absolute right-3.5 top-3.5 inline-flex h-7 items-center gap-1.5 rounded-full border border-white/25 px-3 text-[10px] text-white transition-colors hover:bg-white hover:text-foreground"
+            >
+              {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
+              {copied ? "복사됨" : "프롬프트 복사"}
+            </button>
+            <pre className="max-h-60 overflow-auto whitespace-pre-wrap break-words font-mono text-[12.5px] leading-[1.85]">
               {step.prompt}
             </pre>
-            <div className="absolute right-2 top-2">
-              <CopyButton text={step.prompt} label="프롬프트 복사" size="xs" variant="secondary" />
-            </div>
           </div>
-          {step.check && (
-            <p className="mt-2 text-sm">
-              <span className="font-medium">완료 확인:</span> {step.check}
-            </p>
-          )}
-        </div>
+        )}
+        {step.check && (
+          <p className="mt-3.5 text-sm text-ink-2">
+            <b className="font-semibold text-foreground">완료 확인</b> — {step.check}
+          </p>
+        )}
       </div>
-    </div>
+    </section>
   );
 }

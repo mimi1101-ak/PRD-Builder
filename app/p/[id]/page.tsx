@@ -26,10 +26,11 @@ export default async function ResultPage(props: PageProps<"/p/[id]">) {
   if (!viewer.userId) {
     return (
       <main className="flex flex-1 items-center justify-center px-4 py-16">
-        <div className="w-full max-w-sm rounded-2xl border bg-card p-6 text-center shadow-sm">
-          <Logo className="mx-auto size-9" />
-          <h1 className="mt-3 text-xl font-semibold">로그인하고 PRD 받기</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+        <div className="w-full max-w-sm rounded-[20px] border px-7 pb-7 pt-8 text-center">
+          <Logo className="mx-auto size-7" />
+          <p className="mono-label mt-5 text-muted-foreground">Almost there</p>
+          <h1 className="mt-2 font-display text-[30px] font-light leading-tight tracking-[-0.03em]">로그인하고 PRD 받기</h1>
+          <p className="mt-3 text-sm text-muted-foreground">
             &lsquo;{view.title}&rsquo; 대화는 그대로 저장돼요. 로그인하면 바로 PRD를 만들어 드릴게요.
           </p>
           <LoginButtons next={`/p/${id}`} className="mt-6" />

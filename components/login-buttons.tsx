@@ -28,7 +28,7 @@ export function LoginButtons({ next, className }: { next: string; className?: st
         type="button"
         onClick={() => signIn("kakao")}
         disabled={pending !== null}
-        className="flex h-11 items-center justify-center gap-2 rounded-lg bg-[#FEE500] text-sm font-medium text-black/85 transition hover:brightness-95 disabled:opacity-60"
+        className="flex h-12 items-center justify-center gap-2 rounded-full bg-[#FEE500] text-sm font-medium text-black/85 transition hover:brightness-95 disabled:opacity-60"
       >
         {pending === "kakao" ? <Loader2 className="size-4 animate-spin" /> : <KakaoIcon />}
         카카오로 시작하기
@@ -37,7 +37,7 @@ export function LoginButtons({ next, className }: { next: string; className?: st
         type="button"
         onClick={() => signIn("google")}
         disabled={pending !== null}
-        className="flex h-11 items-center justify-center gap-2 rounded-lg border bg-white text-sm font-medium text-black/85 transition hover:bg-neutral-50 disabled:opacity-60"
+        className="flex h-12 items-center justify-center gap-2 rounded-full border border-line-strong bg-white text-sm font-medium text-black/85 transition hover:border-foreground disabled:opacity-60"
       >
         {pending === "google" ? <Loader2 className="size-4 animate-spin" /> : <GoogleIcon />}
         구글로 시작하기

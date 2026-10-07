@@ -3,15 +3,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowUp, FileText, HelpCircle, Loader2, RotateCcw, Sparkles } from "lucide-react";
+import { ArrowUp, FileText, Loader2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BlackHole } from "@/components/black-hole";
 import { ChatMarkdown } from "@/components/markdown";
 import { LoginDialog } from "@/components/login-dialog";
-import { Logo } from "@/components/logo";
+import { Momo } from "@/components/momo";
 import { AreaList, MobileSummary, SummaryPanel } from "@/components/chat/summary-panel";
 import {
   DONT_KNOW_MESSAGE,
   MAX_INPUT_LENGTH,
+  MAX_QUESTIONS,
   countQuestions,
   duplicatesFinalButton,
   stripTrailingList,
@@ -199,9 +201,32 @@ export function ChatView({
       : [];
   const canType = !busy && !awaitingReply && !done;
 
+  const progress = finalCheck || done ? 100 : (Math.min(questionCount, MAX_QUESTIONS) / MAX_QUESTIONS) * 100;
+
   return (
-    <div className="flex h-[calc(100dvh-3.5rem)] min-h-0">
-      <div className="flex min-w-0 flex-1 flex-col">
+    <div className="relative flex h-[calc(100dvh-3.5rem)] min-h-0">
+      <BlackHole variant="corner" />
+      <div className="relative z-10 flex min-w-0 flex-1 flex-col">
+        <div className="shrink-0 bg-background/85 backdrop-blur-md">
+          <div className="mx-auto flex w-full max-w-[760px] items-center justify-between gap-3 px-4 pb-3 pt-3.5 sm:px-8">
+            <div className="flex min-w-0 items-center gap-3 text-sm font-semibold">
+              <span className="mono-label shrink-0 text-muted-foreground">Interview</span>
+              <span className="truncate">{project.summary.title || project.title}</span>
+            </div>
+            <span className="mono-label shrink-0 text-muted-foreground">
+              {finalCheck || done
+                ? "Final check"
+                : `Q ${String(Math.min(questionCount, MAX_QUESTIONS)).padStart(2, "0")} / ${MAX_QUESTIONS}`}
+            </span>
+          </div>
+          <div className="relative h-px bg-border">
+            <i
+              className="absolute -top-px left-0 h-0.5 bg-foreground transition-[width] duration-500"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+
         <MobileSummary
           title={project.title}
           summary={project.summary}
@@ -211,7 +236,7 @@ export function ChatView({
         />
 
         <div ref={scrollRef} onScroll={onScroll} className="min-h-0 flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-2xl space-y-6 px-4 py-6">
+          <div className="mx-auto w-full max-w-[760px] space-y-8 px-4 py-9 sm:px-8">
             {messages.map((m) => (
               <MessageBubble key={m.id} message={m} />
             ))}
@@ -219,10 +244,12 @@ export function ChatView({
             {streaming !== null && (
               <AiBubble>
                 {streaming ? (
-                  <ChatMarkdown>{stripTrailingList(streaming) + " ▍"}</ChatMarkdown>
+                  <ChatMarkdown className="text-[15.5px] leading-[1.8] text-ink-2">
+                    {stripTrailingList(streaming) + " ▍"}
+                  </ChatMarkdown>
                 ) : (
-                  <span className="inline-flex items-center gap-2 text-muted-foreground">
-                    <Loader2 className="size-4 animate-spin" /> 생각하고 있어요…
+                  <span className="inline-flex items-center gap-3 text-sm text-muted-foreground">
+                    <Thinking /> 생각하고 있어요…
                   </span>
                 )}
               </AiBubble>
@@ -233,7 +260,7 @@ export function ChatView({
             )}
 
             {failure && (
-              <div className="flex flex-col items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm">
+              <div className="flex flex-col items-start gap-2 rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm">
                 <p className="text-destructive">{failure.message}</p>
                 {awaitingReply && (
                   <Button size="sm" variant="outline" onClick={() => void send()}>
@@ -245,10 +272,10 @@ export function ChatView({
           </div>
         </div>
 
-        <div className="shrink-0 border-t bg-background/95 px-4 pb-4 pt-3">
-          <div className="mx-auto w-full max-w-2xl">
+        <div className="shrink-0 bg-linear-to-t from-background from-70% to-background/0">
+          <div className="mx-auto w-full max-w-[760px] px-4 pb-4 pt-3 sm:px-8 sm:pb-5">
             {done ? (
-              <div className="flex items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3 text-sm">
+              <div className="flex items-center justify-between gap-3 rounded-2xl border border-line-strong bg-background px-4 py-3 text-sm">
                 <span className="text-muted-foreground">문서가 이미 만들어졌어요.</span>
                 <Button asChild size="sm">
                   <Link href={`/p/${projectId}`}>
@@ -259,15 +286,17 @@ export function ChatView({
             ) : (
               <>
                 {(options.length > 0 || (lastAi && !finalCheck && !busy && !failure)) && (
-                  <div className="mb-2.5 flex flex-wrap gap-2">
-                    {options.map((option) => (
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    {options.map((option, i) => (
                       <button
                         key={option}
                         type="button"
                         onClick={() => void send(option)}
-                        className="rounded-full border border-brand/30 bg-brand-soft px-3 py-1.5 text-sm text-foreground transition hover:border-brand/60"
+                        className="group inline-flex min-h-10 items-center gap-2.5 rounded-full border border-line-strong bg-background py-1 pl-[5px] pr-4 text-left text-sm transition-colors hover:border-foreground"
                       >
-                        <Sparkles className="mr-1 inline size-3.5 text-brand" />
+                        <span className="grid size-7 shrink-0 place-items-center rounded-full border border-line-strong font-mono text-[11px] text-muted-foreground transition-colors group-hover:border-foreground group-hover:bg-foreground group-hover:text-background">
+                          {String.fromCharCode(65 + i)}
+                        </span>
                         {option}
                       </button>
                     ))}
@@ -275,9 +304,9 @@ export function ChatView({
                       <button
                         type="button"
                         onClick={() => void send(DONT_KNOW_MESSAGE)}
-                        className="rounded-full border px-3 py-1.5 text-sm text-muted-foreground transition hover:text-foreground"
+                        className="inline-flex min-h-10 items-center rounded-full border border-dashed border-line-strong bg-background px-4 text-sm text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
                       >
-                        <HelpCircle className="mr-1 inline size-3.5" />잘 모르겠어요 (추천해 주세요)
+                        잘 모르겠어요 (추천해 주세요)
                       </button>
                     )}
                   </div>
@@ -287,7 +316,7 @@ export function ChatView({
                     e.preventDefault();
                     submitInput();
                   }}
-                  className="flex items-end gap-2 rounded-2xl border bg-card p-2 shadow-sm focus-within:ring-2 focus-within:ring-brand/20"
+                  className="flex items-end gap-2 rounded-2xl border border-line-strong bg-background p-1.5 transition-[border-color,box-shadow] duration-200 focus-within:border-foreground focus-within:shadow-[0_0_0_6px_rgba(11,11,11,0.045)]"
                 >
                   <textarea
                     value={input}
@@ -301,18 +330,18 @@ export function ChatView({
                     rows={1}
                     maxLength={MAX_INPUT_LENGTH}
                     disabled={!canType}
+                    aria-label="답변"
                     placeholder={finalCheck ? "더 넣고 싶은 기능이나 고칠 부분을 적어 주세요" : "직접 답을 적어도 돼요"}
-                    className="field-sizing-content max-h-40 min-h-10 flex-1 resize-none bg-transparent px-2 py-2 text-base outline-none placeholder:text-muted-foreground/70 disabled:opacity-60"
+                    className="field-sizing-content max-h-40 min-h-11 flex-1 resize-none bg-transparent px-3 py-2.5 text-[15.5px] outline-none placeholder:text-ink-4 disabled:opacity-60"
                   />
-                  <Button
+                  <button
                     type="submit"
-                    size="icon"
                     disabled={!canType || !input.trim()}
                     aria-label="보내기"
-                    className="rounded-xl bg-brand text-brand-foreground hover:bg-brand/90"
+                    className="mb-px grid size-10 shrink-0 place-items-center rounded-full bg-foreground text-background transition-colors disabled:bg-paper-3 disabled:text-ink-4"
                   >
-                    {busy ? <Loader2 className="animate-spin" /> : <ArrowUp />}
-                  </Button>
+                    {busy ? <Loader2 className="size-[18px] animate-spin" /> : <ArrowUp className="size-[18px]" />}
+                  </button>
                 </form>
               </>
             )}
@@ -333,20 +362,60 @@ export function ChatView({
   );
 }
 
+// 픽셀 세 칸이 차례로 깜빡이는 "생각 중" 표시 (움직임 줄이기 설정이면 멈춘다)
+function Thinking() {
+  return (
+    <span className="inline-flex gap-1" aria-hidden>
+      {[0, 150, 300].map((delay) => (
+        <i
+          key={delay}
+          className="size-[5px] animate-[thinking_1.2s_infinite_both] bg-foreground"
+          style={{ animationDelay: `${delay}ms` }}
+        />
+      ))}
+    </span>
+  );
+}
+
 function AiBubble({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex gap-3">
-      <Logo className="mt-1 size-6 shrink-0" />
-      <div className="min-w-0 flex-1 text-[15px]">{children}</div>
+    <div className="grid grid-cols-[36px_minmax(0,1fr)] gap-3.5">
+      <Momo className="-mt-1 w-9" />
+      <div className="min-w-0">
+        <p className="mono-label mb-2 text-muted-foreground">MOMO</p>
+        {children}
+      </div>
     </div>
   );
 }
 
+// AI 메시지는 "요약 문단 + 질문 문단"이다. 마지막 문단이 물음표로 끝나면,
+// 그 문단에서 처음 물음표가 나오는 문장부터 끝까지를 질문으로 크게 보여 준다.
+function splitQuestion(text: string) {
+  const paragraphs = text.trim().split(/\n\s*\n/);
+  const last = paragraphs.pop()?.trim() ?? "";
+  if (!/[?？]\s*$/.test(last)) return { body: text, question: null };
+  const sentences = last.split(/(?<=[.!?？。])\s+/);
+  const first = sentences.findIndex((s) => /[?？]\s*$/.test(s));
+  const lead = sentences.slice(0, first).join(" ");
+  return {
+    body: [...paragraphs, lead].filter(Boolean).join("\n\n"),
+    question: sentences.slice(first).join(" "),
+  };
+}
+
 function MessageBubble({ message }: { message: ChatMessage }) {
   if (message.role === "ai") {
+    const { body, question } = splitQuestion(stripTrailingList(message.content));
     return (
       <AiBubble>
-        <ChatMarkdown>{stripTrailingList(message.content)}</ChatMarkdown>
+        {body && <ChatMarkdown className="text-[15.5px] leading-[1.8] text-ink-2">{body}</ChatMarkdown>}
+        {question && (
+          <ChatMarkdown className="mt-3 text-[15.5px] font-medium leading-[1.8] text-foreground">
+
+            {question}
+          </ChatMarkdown>
+        )}
       </AiBubble>
     );
   }
@@ -354,7 +423,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
     <div className="flex justify-end">
       <div
         className={cn(
-          "max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-muted px-4 py-2.5 text-[15px] leading-7",
+          "max-w-[80%] whitespace-pre-wrap rounded-[18px] rounded-br-[4px] bg-muted px-[18px] py-3 text-[15.5px] leading-[1.7]",
           message.id < 0 && "opacity-70",
         )}
       >
@@ -367,32 +436,32 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 function FinalCheckCard({ project, done, onMakePrd }: { project: ProjectView; done: boolean; onMakePrd: () => void }) {
   const { summary } = project;
   return (
-    <div className="rounded-2xl border bg-card p-5 shadow-sm">
-      <p className="text-xs font-medium text-brand">최종 확인</p>
-      <h3 className="mt-1 text-lg font-semibold">{summary.title || project.title}</h3>
-      {summary.one_liner && <p className="mt-0.5 text-sm text-muted-foreground">{summary.one_liner}</p>}
-      <div className="mt-4">
+    <div className="rounded-[20px] border border-foreground bg-background p-6 shadow-[0_40px_90px_-40px_rgba(0,0,0,0.3)]">
+      <p className="mono-label text-muted-foreground">Final check</p>
+      <h3 className="mt-3 font-display text-[28px] font-light leading-tight tracking-[-0.03em]">
+        {summary.title || project.title}
+      </h3>
+      {summary.one_liner && <p className="mt-1 text-sm text-muted-foreground">{summary.one_liner}</p>}
+      <div className="mt-5">
         <AreaList summary={summary} coverage={project.coverage} />
       </div>
       {summary.final_changes.length > 0 && (
-        <div className="mt-4 rounded-lg bg-muted/60 px-3 py-2.5">
-          <p className="text-xs font-medium text-muted-foreground">추가·수정한 내용</p>
-          <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm">
+        <div className="border-t pt-4">
+          <p className="text-xs text-muted-foreground">추가·수정한 내용</p>
+          <ul className="mt-1.5 space-y-0.5 text-sm">
             {summary.final_changes.map((c, i) => (
-              <li key={i}>{c}</li>
+              <li key={i} className="relative pl-5 before:absolute before:left-0 before:text-ink-4 before:content-['—']">
+                {c}
+              </li>
             ))}
           </ul>
         </div>
       )}
-      <p className="mt-4 text-xs text-muted-foreground">
+      <p className="mt-4 border-t pt-4 text-xs leading-relaxed text-muted-foreground">
         &ldquo;아직 정하지 않았어요&rdquo; 항목은 PRD의 &lsquo;미결 사항&rsquo;으로 들어가요. 고칠 부분이 있으면 아래
         입력창에 적어 주세요.
       </p>
-      <Button
-        onClick={onMakePrd}
-        size="lg"
-        className="mt-4 h-11 w-full rounded-xl bg-brand text-base text-brand-foreground hover:bg-brand/90"
-      >
+      <Button onClick={onMakePrd} size="lg" className="mt-4 w-full">
         <FileText />
         {done ? "결과 보기" : "이대로 PRD 만들기"}
       </Button>

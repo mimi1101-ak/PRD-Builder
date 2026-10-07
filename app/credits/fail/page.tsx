@@ -14,9 +14,9 @@ export default async function PaymentFailPage(props: PageProps<"/credits/fail">)
 
   return (
     <main className="flex flex-1 items-center justify-center px-4 py-16">
-      <div className="w-full max-w-sm rounded-2xl border bg-card p-6 text-center shadow-sm">
+      <div className="w-full max-w-sm rounded-[20px] border px-7 pb-7 pt-8 text-center">
         <CircleX className="mx-auto size-9 text-destructive" />
-        <p className="mt-3 text-lg font-semibold">결제가 완료되지 않았어요</p>
+        <p className="mt-4 font-display text-2xl font-light tracking-[-0.03em]">결제가 완료되지 않았어요</p>
         <p className="mt-1 text-sm text-muted-foreground">{message}</p>
         {code && <p className="mt-1 text-xs text-muted-foreground/70">오류 코드: {code}</p>}
         <p className="mt-3 text-xs text-muted-foreground">크레딧은 차감·지급되지 않았어요.</p>

@@ -17,7 +17,7 @@ export function LoginDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>로그인하고 PRD 받기</DialogTitle>
+          <DialogTitle className="font-display text-2xl font-light tracking-[-0.03em]">로그인하고 PRD 받기</DialogTitle>
           <DialogDescription>
             지금까지의 대화는 그대로 저장돼요. 로그인하면 바로 PRD를 만들어 드릴게요.
           </DialogDescription>

@@ -4,7 +4,6 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUp, Check, ChevronDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,7 +70,7 @@ export function IdeaComposer() {
           e.preventDefault();
           void submit();
         }}
-        className="rounded-2xl border bg-card shadow-sm transition-shadow focus-within:shadow-md focus-within:ring-2 focus-within:ring-brand/20"
+        className="rounded-[18px] border border-line-strong bg-background transition-[border-color,box-shadow] duration-200 focus-within:border-foreground focus-within:shadow-[0_0_0_6px_rgba(11,11,11,0.045)]"
       >
         <label htmlFor="idea" className="sr-only">
           아이디어
@@ -89,19 +88,20 @@ export function IdeaComposer() {
             }
           }}
           maxLength={MAX_INPUT_LENGTH}
-          rows={3}
+          rows={2}
           autoFocus
-          placeholder="만들고 싶은 서비스를 한 줄로 적어 주세요"
-          className="field-sizing-content block max-h-64 min-h-24 w-full resize-none bg-transparent px-4 pt-4 text-base outline-none placeholder:text-muted-foreground/70"
+          placeholder="어떤 아이디어를 만들어볼까요? MOMO에게 이야기해주세요"
+          className="field-sizing-content block max-h-56 min-h-[92px] w-full resize-none bg-transparent px-[22px] pb-1 pt-5 text-[17px] leading-relaxed outline-none placeholder:text-ink-4"
         />
-        <div className="flex items-center justify-between gap-2 px-3 pb-3 pt-1">
-          <div className="flex flex-wrap items-center gap-1">
+        <div className="flex items-center justify-between gap-2 py-2.5 pl-3 pr-2.5">
+          <div className="flex flex-wrap items-center gap-0.5">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button type="button" variant="ghost" size="sm" className="text-muted-foreground">
+                <button type="button" className={selector}>
+                  <span className="mono-label text-[10px] text-ink-4">도구</span>
                   {toolLabel}
-                  <ChevronDown className="size-3.5 opacity-60" />
-                </Button>
+                  <ChevronDown className="size-3 text-muted-foreground" />
+                </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-48">
                 <DropdownMenuLabel>사용할 도구</DropdownMenuLabel>
@@ -115,10 +115,11 @@ export function IdeaComposer() {
             </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button type="button" variant="ghost" size="sm" className="text-muted-foreground">
-                  {experienceLabel ?? "코딩 경험"}
-                  <ChevronDown className="size-3.5 opacity-60" />
-                </Button>
+                <button type="button" className={selector}>
+                  <span className="mono-label text-[10px] text-ink-4">경험</span>
+                  {experienceLabel ?? "선택 안 함"}
+                  <ChevronDown className="size-3 text-muted-foreground" />
+                </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-52">
                 <DropdownMenuLabel>코딩 경험</DropdownMenuLabel>
@@ -131,25 +132,28 @@ export function IdeaComposer() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <Button
-            type="submit"
-            size="icon"
-            disabled={!canSubmit}
-            aria-label="아이디어 보내기"
-            className="rounded-xl bg-brand text-brand-foreground hover:bg-brand/90"
-          >
-            {submitting ? <Loader2 className="animate-spin" /> : <ArrowUp />}
-          </Button>
+          <div className="flex items-center gap-3">
+            <span className="mono-label hidden text-[10px] text-ink-4 sm:inline">Enter ↵</span>
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              aria-label="아이디어 보내기"
+              className="grid size-[42px] shrink-0 place-items-center rounded-full bg-foreground text-background transition-[background-color,transform] duration-200 hover:enabled:-translate-y-0.5 disabled:bg-paper-3 disabled:text-ink-4"
+            >
+              {submitting ? <Loader2 className="size-[18px] animate-spin" /> : <ArrowUp className="size-[18px]" />}
+            </button>
+          </div>
         </div>
       </form>
 
-      <div className="mt-4 flex flex-wrap justify-center gap-2">
+      <div className="mt-3.5 flex flex-wrap items-center gap-2">
+        <span className="mono-label mr-1 text-muted-foreground">예시</span>
         {EXAMPLES.map((example) => (
           <button
             key={example}
             type="button"
             onClick={() => pickExample(example)}
-            className="rounded-full border bg-card px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-brand/40 hover:text-foreground"
+            className="h-8 rounded-full border border-line-strong bg-background px-3.5 text-[13px] text-ink-2 transition-colors hover:border-foreground hover:bg-foreground hover:text-background"
           >
             {example}
           </button>
@@ -158,3 +162,6 @@ export function IdeaComposer() {
     </div>
   );
 }
+
+const selector =
+  "inline-flex h-8 items-center gap-2 rounded-full px-2.5 text-[13px] text-ink-2 transition-colors hover:bg-muted data-[state=open]:bg-muted";

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Lock, Sparkles } from "lucide-react";
+import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Markdown } from "@/components/markdown";
 import { PRODUCTS, REWRITES_PER_CREDIT, type DocKind } from "@/lib/domain";
@@ -55,45 +55,47 @@ export function LockedPreview({
   onUnlock: () => void;
   busy: boolean;
 }) {
+  const perks = [
+    { label: "작업 단계 8~15개 + CLAUDE.md", meta: "2 files" },
+    { label: "세 파일 한 번에 받기", meta: ".zip" },
+    { label: "섹션 다시 쓰기", meta: `× ${REWRITES_PER_CREDIT}` },
+  ];
   return (
-    <div className="relative overflow-hidden rounded-xl border bg-card">
-      <div aria-hidden className="pointer-events-none select-none p-6 blur-[5px]">
+    <div className="relative min-h-[640px]">
+      <div aria-hidden className="pointer-events-none select-none opacity-45 blur-[7px]">
         <Markdown>{SAMPLE[kind]}</Markdown>
       </div>
-      <div className="absolute inset-0 flex items-center justify-center bg-background/40 p-4">
-        <div className="w-full max-w-md rounded-2xl border bg-card p-6 text-center shadow-lg">
-          <Lock className="mx-auto size-6 text-brand" />
-          <h3 className="mt-3 text-lg font-semibold">작업 단계와 CLAUDE.md 열기</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
+      <div className="absolute inset-x-0 top-16 flex justify-center px-1 sm:top-24">
+        <div className="w-full max-w-[460px] rounded-[20px] border border-foreground bg-background px-[30px] pb-[26px] pt-[30px] shadow-[0_40px_90px_-40px_rgba(0,0,0,0.35)]">
+          <p className="mono-label flex items-center gap-2 text-muted-foreground">
+            <Lock className="size-3" /> Locked
+          </p>
+          <h3 className="mt-3.5 font-display text-[28px] font-light leading-tight tracking-[-0.03em]">
+            작업 단계와 CLAUDE.md 열기
+          </h3>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             클로드 코드에 순서대로 붙여 넣기만 하면 되는 단계별 프롬프트와 규칙 파일을 만들어 드려요.
           </p>
-          <ul className="mx-auto mt-4 max-w-xs space-y-1.5 text-left text-sm">
-            <li className="flex gap-2">
-              <Sparkles className="mt-0.5 size-4 shrink-0 text-brand" /> 작업 단계 8~15개 + CLAUDE.md
-            </li>
-            <li className="flex gap-2">
-              <Sparkles className="mt-0.5 size-4 shrink-0 text-brand" /> 세 파일 한 번에 받기 (zip)
-            </li>
-            <li className="flex gap-2">
-              <Sparkles className="mt-0.5 size-4 shrink-0 text-brand" /> 섹션 다시 쓰기 {REWRITES_PER_CREDIT}회
-            </li>
+          <ul className="mb-[22px] mt-5 border-t">
+            {perks.map((p) => (
+              <li key={p.label} className="flex justify-between gap-3 border-b py-[11px] text-sm">
+                <span>{p.label}</span>
+                <span className="mono-label text-[10.5px] text-muted-foreground">{p.meta}</span>
+              </li>
+            ))}
           </ul>
           {credits > 0 ? (
-            <Button
-              onClick={onUnlock}
-              disabled={busy}
-              className="mt-5 h-10 w-full rounded-xl bg-brand text-brand-foreground hover:bg-brand/90"
-            >
-              크레딧 1건으로 열기 (남은 크레딧 {credits}건)
+            <Button onClick={onUnlock} disabled={busy} size="lg" className="h-12 w-full">
+              크레딧 1건으로 열기 — 남은 크레딧 {credits}
             </Button>
           ) : (
-            <Button asChild className="mt-5 h-10 w-full rounded-xl bg-brand text-brand-foreground hover:bg-brand/90">
+            <Button asChild size="lg" className="h-12 w-full">
               <Link href={`/credits?next=${encodeURIComponent(`/p/${projectId}`)}`}>
                 크레딧 구매하기 · 1건 {PRODUCTS.credit_1.amount.toLocaleString()}원
               </Link>
             </Button>
           )}
-          <p className="mt-2 text-xs text-muted-foreground">문서 생성에 실패하면 크레딧은 차감되지 않아요.</p>
+          <p className="mono-label mt-3 text-center text-[10px] text-ink-4">문서 생성에 실패하면 크레딧은 차감되지 않아요</p>
         </div>
       </div>
     </div>

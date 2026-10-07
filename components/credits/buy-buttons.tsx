@@ -59,7 +59,7 @@ export function BuyButtons({ next }: { next: string }) {
   return (
     <div>
       {!clientKey && (
-        <p className="mb-4 rounded-xl border border-amber-300/60 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <p className="mb-5 rounded-2xl border border-dashed border-line-strong px-4 py-3 text-sm text-ink-2">
           결제를 준비하고 있어요. 지금은 크레딧을 구매할 수 없어요. (운영자: 토스페이먼츠 키를 .env.local 에 넣으면
           결제가 켜져요)
         </p>
@@ -69,25 +69,21 @@ export function BuyButtons({ next }: { next: string }) {
           const p = PRODUCTS[key];
           const best = key === "credit_5";
           return (
-            <div
-              key={key}
-              className={cn("relative rounded-2xl border bg-card p-6", best && "border-brand/50 ring-1 ring-brand/20")}
-            >
+            <div key={key} className={cn("relative rounded-[20px] border p-6", best && "border-foreground")}>
               {best && (
-                <span className="absolute -top-2.5 right-4 rounded-full bg-brand px-2.5 py-0.5 text-xs font-medium text-brand-foreground">
+                <span className="mono-label absolute -top-2.5 right-5 rounded-full bg-foreground px-2.5 py-1 text-[10px] text-background">
                   건당 {Math.round(p.amount / p.credits).toLocaleString()}원
                 </span>
               )}
-              <p className="text-sm text-muted-foreground">크레딧 {p.credits}건</p>
-              <p className="mt-1 text-3xl font-semibold tracking-tight">{p.amount.toLocaleString()}원</p>
+              <p className="mono-label text-muted-foreground">크레딧 {p.credits}건</p>
+              <p className="mt-3 font-display text-4xl font-extralight tracking-[-0.04em]">{p.amount.toLocaleString()}원</p>
               <p className="mt-2 text-sm text-muted-foreground">프로젝트 {p.credits}개의 작업 단계 + CLAUDE.md 열기</p>
               <Button
                 onClick={() => buy(key)}
                 disabled={pending !== null || !clientKey}
-                className={cn(
-                  "mt-5 h-10 w-full rounded-xl",
-                  best && "bg-brand text-brand-foreground hover:bg-brand/90",
-                )}
+                variant={best ? "default" : "outline"}
+                size="lg"
+                className="mt-6 w-full"
               >
                 {pending === key && <Loader2 className="animate-spin" />}
                 {clientKey ? `${p.credits}건 결제하기` : "결제 준비 중"}

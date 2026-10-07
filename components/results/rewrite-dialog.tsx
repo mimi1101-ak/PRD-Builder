@@ -91,13 +91,13 @@ export function RewriteDialog({
     <Dialog open={!!target} onOpenChange={(open) => !open && !running && onClose()}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>섹션 다시 쓰기</DialogTitle>
+          <DialogTitle className="font-display text-2xl font-light tracking-[-0.03em]">섹션 다시 쓰기</DialogTitle>
           <DialogDescription>
             {DOC_LABELS[kind]} · {target?.title} — 남은 횟수 {rewritesLeft}회
           </DialogDescription>
         </DialogHeader>
         {preview ? (
-          <div className="max-h-[45dvh] overflow-y-auto rounded-lg border bg-muted/30 p-4">
+          <div className="max-h-[45dvh] overflow-y-auto rounded-xl border p-5">
             <Markdown>{preview}</Markdown>
           </div>
         ) : (
