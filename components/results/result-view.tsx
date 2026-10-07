@@ -20,7 +20,15 @@ import { Markdown, headingId, splitHeadingNumber } from "@/components/markdown";
 import { CopyButton, DocBody, TaskSteps, stepAnchor, type RewriteTarget } from "@/components/results/doc-body";
 import { LockedPreview } from "@/components/results/locked-preview";
 import { RewriteDialog } from "@/components/results/rewrite-dialog";
-import { DOC_FILES, DOC_KINDS, DOC_LABELS, REWRITES_PER_CREDIT, type DocKind, type ProjectView } from "@/lib/domain";
+import {
+  DOC_FILES,
+  DOC_KINDS,
+  DOC_LABELS,
+  REWRITES_PER_CREDIT,
+  rewritesLeftLabel,
+  type DocKind,
+  type ProjectView,
+} from "@/lib/domain";
 import { downloadText, downloadZip, slugify } from "@/lib/download";
 import { parseTaskSteps, splitSections } from "@/lib/markdown";
 import { readJsonError, readNdjson } from "@/lib/ndjson";
@@ -68,11 +76,14 @@ export function ResultView({
   initialDocs,
   initialCredits,
   initialRewritesLeft,
+  isDeveloper = false,
 }: {
   project: ProjectView;
   initialDocs: Record<DocKind, DocState | null>;
   initialCredits: number;
   initialRewritesLeft: number;
+  // 개발자 계정: 크레딧 차감 없이 바로 잠금 해제 (확인 창 생략)
+  isDeveloper?: boolean;
 }) {
   const projectId = initialProject.id;
   const [project, setProject] = useState(initialProject);
@@ -260,9 +271,14 @@ export function ResultView({
     if (ok) toast.success("작업 단계와 CLAUDE.md가 열렸어요");
   }
 
+  function askUnlock() {
+    if (isDeveloper) void unlock();
+    else setConfirmOpen(true);
+  }
+
   async function downloadAll() {
     if (!unlocked) {
-      setConfirmOpen(true);
+      askUnlock();
       return;
     }
     const files = DOC_KINDS.filter((k) => docs[k].status === "ready").map((k) => ({
@@ -368,7 +384,7 @@ export function ResultView({
                 credits={credits}
                 projectId={projectId}
                 busy={paidBusy}
-                onUnlock={() => setConfirmOpen(true)}
+                onUnlock={askUnlock}
               />
             ) : (
               <DocPanel
@@ -603,7 +619,7 @@ function DocPanel({
     <div>
       <p className="mb-5 font-mono text-[11px] text-ink-4">
         {kind === "claude_md" ? "프로젝트 폴더 맨 위에 CLAUDE.md 로 저장" : `프로젝트 폴더의 ${file.zipPath} 로 저장`}
-        {unlocked && ` · 다시 쓰기 ${rewritesLeft}회 남음`}
+        {unlocked && ` · 다시 쓰기 ${rewritesLeftLabel(rewritesLeft)}`}
       </p>
       {kind === "tasks" ? (
         <TaskSteps projectId={projectId} content={doc.content} onRewrite={canRewrite ? onRewrite : undefined} />

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, LogOut } from "lucide-react";
+import { ChevronDown, LogOut, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export function UserMenu({ nickname }: { nickname: string }) {
+export function UserMenu({ nickname, isDeveloper = false }: { nickname: string; isDeveloper?: boolean }) {
   const router = useRouter();
   async function signOut() {
     await fetch("/auth/signout", { method: "POST" });
@@ -41,6 +41,14 @@ export function UserMenu({ nickname }: { nickname: string }) {
         <DropdownMenuItem asChild>
           <Link href="/credits">크레딧 충전</Link>
         </DropdownMenuItem>
+        {isDeveloper && (
+          <DropdownMenuItem asChild>
+            <Link href="/admin">
+              <Wrench />
+              개발자 도구
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={signOut}>
           <LogOut />

@@ -6,6 +6,7 @@ import { jsonError, ndjsonResponse } from "@/lib/ndjson";
 import { generateDocument } from "@/lib/ai/documents";
 import { describeAiError } from "@/lib/ai/client";
 import { loadCredits, loadDocuments, loadMessages } from "@/lib/projects";
+import { isAdmin } from "@/lib/admin";
 import { FREE_PRD_PER_ACCOUNT, normalizeCoverage, normalizeSummary, type DocKind } from "@/lib/domain";
 
 // 문서는 상위 모델로 길게 쓰므로 넉넉히
@@ -20,6 +21,7 @@ const GenerateSchema = z.object({
 // - PRD: 무료, 계정당 3개까지 (다 쓰면 더 만들 수 없음)
 // - 작업 단계·CLAUDE.md: 잠금 해제된 프로젝트만. 처음 열 때(작업 단계 생성 성공 시점)에 크레딧 1 차감
 // - 실패한 생성은 횟수·크레딧을 차감하지 않는다
+// - 개발자 계정은 PRD 개수 제한이 없고, 잠금 해제 때 크레딧이 차감되지 않는다 (unlock_project 안에서 처리)
 async function handlePOST(request: Request) {
   const parsed = GenerateSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return jsonError(400, "잘못된 요청이에요.");
@@ -28,6 +30,7 @@ async function handlePOST(request: Request) {
   const viewer = await getViewer();
   if (!viewer.userId) return jsonError(401, "문서를 만들려면 로그인이 필요해요.", "login_required");
   const userId = viewer.userId;
+  const isDeveloper = await isAdmin(userId);
 
   const project = await getProjectForViewer(projectId, viewer);
   if (!project) return jsonError(404, "프로젝트를 찾을 수 없어요.");
@@ -44,7 +47,7 @@ async function handlePOST(request: Request) {
   const prd = docs.prd?.status === "ready" ? docs.prd.content : "";
   if (kind !== "prd") {
     if (!prd) return jsonError(409, "PRD를 먼저 만들어 주세요.", "need_prd");
-    if (!project.unlocked && (await loadCredits(userId)) < 1) {
+    if (!project.unlocked && !isDeveloper && (await loadCredits(userId)) < 1) {
       return jsonError(402, "크레딧이 필요해요.", "no_credit");
     }
   }
@@ -69,7 +72,7 @@ async function handlePOST(request: Request) {
       .eq("project_id", project.id)
       .eq("kind", kind);
 
-  if (kind === "prd") {
+  if (kind === "prd" && !isDeveloper) {
     const { data: allowed } = await admin.rpc("consume_free_generation", {
       p_user_id: userId,
       p_limit: FREE_PRD_PER_ACCOUNT,
@@ -102,7 +105,7 @@ async function handlePOST(request: Request) {
     } catch (err) {
       console.error(`[documents] ${kind} failed`, err);
       await markFailed();
-      if (kind === "prd") await admin.rpc("refund_free_generation", { p_user_id: userId });
+      if (kind === "prd" && !isDeveloper) await admin.rpc("refund_free_generation", { p_user_id: userId });
       const { message, retryable } = describeAiError(err);
       send({ type: "error", message, retryable });
       return;

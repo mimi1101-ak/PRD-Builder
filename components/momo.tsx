@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 // MOMO: 대화 상대역인 검은 픽셀 고양이 (앉아 있는 모습). # 몸, o 흰 눈, . 빈칸 — 24 × 23 칸
-const ROWS = [
+export const MOMO_SIT_ROWS = [
   "....##..................",
   "....###.................",
   "....####................",
@@ -27,13 +27,13 @@ const ROWS = [
   "......#####.#####.......",
 ];
 
-const WIDTH = ROWS[0].length;
-const HEIGHT = ROWS.length;
+const WIDTH = MOMO_SIT_ROWS[0].length;
+const HEIGHT = MOMO_SIT_ROWS.length;
 
 // 같은 줄에서 이어진 칸은 사각형 하나로 묶는다
 function spans(char: string) {
   const out: { x: number; y: number; w: number }[] = [];
-  ROWS.forEach((row, y) => {
+  MOMO_SIT_ROWS.forEach((row, y) => {
     for (let x = 0; x < row.length; x++) {
       if (row[x] !== char) continue;
       let end = x;

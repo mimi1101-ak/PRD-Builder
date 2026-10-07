@@ -1,7 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import { getProjectForViewer, getViewer } from "@/lib/access";
 import { loadCredits, loadDocuments, toDocState } from "@/lib/projects";
-import { REWRITES_PER_CREDIT, toProjectView } from "@/lib/domain";
+import { isAdmin } from "@/lib/admin";
+import { REWRITES_PER_CREDIT, UNLIMITED_REWRITES, toProjectView } from "@/lib/domain";
 import { ResultView } from "@/components/results/result-view";
 import { LoginButtons } from "@/components/login-buttons";
 import { Logo } from "@/components/logo";
@@ -41,6 +42,7 @@ export default async function ResultPage(props: PageProps<"/p/[id]">) {
 
   const docs = await loadDocuments(project.id);
   const rewritesUsed = Object.values(docs).reduce((sum, d) => sum + (d?.rewrite_count ?? 0), 0);
+  const isDeveloper = await isAdmin(viewer.userId);
 
   return (
     <ResultView
@@ -53,7 +55,8 @@ export default async function ResultPage(props: PageProps<"/p/[id]">) {
         claude_md: project.unlocked ? toDocState(docs.claude_md) : null,
       }}
       initialCredits={await loadCredits(viewer.userId)}
-      initialRewritesLeft={Math.max(0, REWRITES_PER_CREDIT - rewritesUsed)}
+      initialRewritesLeft={isDeveloper ? UNLIMITED_REWRITES : Math.max(0, REWRITES_PER_CREDIT - rewritesUsed)}
+      isDeveloper={isDeveloper}
     />
   );
 }

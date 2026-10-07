@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Markdown } from "@/components/markdown";
-import { DOC_LABELS, type DocKind } from "@/lib/domain";
+import { DOC_LABELS, rewritesLeftLabel, type DocKind } from "@/lib/domain";
 import { readJsonError, readNdjson } from "@/lib/ndjson";
 import type { RewriteTarget } from "@/components/results/doc-body";
 
@@ -93,7 +93,7 @@ export function RewriteDialog({
         <DialogHeader>
           <DialogTitle className="font-display text-2xl font-light tracking-[-0.03em]">섹션 다시 쓰기</DialogTitle>
           <DialogDescription>
-            {DOC_LABELS[kind]} · {target?.title} — 남은 횟수 {rewritesLeft}회
+            {DOC_LABELS[kind]} · {target?.title} — 다시 쓰기 {rewritesLeftLabel(rewritesLeft)}
           </DialogDescription>
         </DialogHeader>
         {preview ? (

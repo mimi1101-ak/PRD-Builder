@@ -97,6 +97,15 @@ export const MESSAGES_PER_MINUTE = 20;
 export const MAX_MESSAGES_PER_PROJECT = 80;
 export const MAX_INPUT_LENGTH = 2000;
 
+// 개발자 계정의 다시 쓰기 남은 횟수 (사실상 무제한)
+export const UNLIMITED_REWRITES = 9999;
+export function rewritesLeftLabel(left: number) {
+  return left >= UNLIMITED_REWRITES ? "무제한" : `${left}회 남음`;
+}
+
+// 개발자 도구: 한 번에 넣어 줄 수 있는 크레딧 수
+export const MAX_GRANT_CREDITS = 100;
+
 export const PRODUCTS = {
   credit_1: { credits: 1, amount: 3900, name: "dot.PRD 크레딧 1건" },
   credit_5: { credits: 5, amount: 14900, name: "dot.PRD 크레딧 5건" },

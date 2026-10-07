@@ -7,7 +7,8 @@ import { rewriteSection } from "@/lib/ai/documents";
 import { describeAiError } from "@/lib/ai/client";
 import { getSection, replaceSection } from "@/lib/markdown";
 import { loadDocuments, loadMessages } from "@/lib/projects";
-import { REWRITES_PER_CREDIT, normalizeCoverage, normalizeSummary } from "@/lib/domain";
+import { isAdmin } from "@/lib/admin";
+import { REWRITES_PER_CREDIT, UNLIMITED_REWRITES, normalizeCoverage, normalizeSummary } from "@/lib/domain";
 
 export const maxDuration = 120;
 
@@ -18,7 +19,7 @@ const RewriteSchema = z.object({
   instruction: z.string().max(500).default(""),
 });
 
-// 섹션 단위 다시 쓰기: 잠금 해제된 프로젝트에서 크레딧 1건당 3회까지 (PRD F2)
+// 섹션 단위 다시 쓰기: 잠금 해제된 프로젝트에서 크레딧 1건당 3회까지 (PRD F2). 개발자 계정은 제한 없음
 async function handlePOST(request: Request) {
   const parsed = RewriteSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return jsonError(400, "잘못된 요청이에요.");
@@ -31,9 +32,12 @@ async function handlePOST(request: Request) {
   if (!project.unlocked)
     return jsonError(402, "다시 쓰기는 크레딧으로 잠금 해제한 프로젝트에서 쓸 수 있어요.", "locked");
 
+  const isDeveloper = await isAdmin(viewer.userId);
+  const limit = isDeveloper ? Number.MAX_SAFE_INTEGER : REWRITES_PER_CREDIT;
+
   const docs = await loadDocuments(project.id);
   const used = Object.values(docs).reduce((sum, d) => sum + (d?.rewrite_count ?? 0), 0);
-  if (used >= REWRITES_PER_CREDIT) {
+  if (used >= limit) {
     return jsonError(429, `다시 쓰기는 프로젝트당 ${REWRITES_PER_CREDIT}번까지예요.`, "rewrite_limit");
   }
 
@@ -87,7 +91,7 @@ async function handlePOST(request: Request) {
       p_project_id: project.id,
       p_kind: kind,
       p_content: newContent,
-      p_limit: REWRITES_PER_CREDIT,
+      p_limit: isDeveloper ? 2147483647 : REWRITES_PER_CREDIT,
     });
     if (error || !applied) {
       send({ type: "error", message: `다시 쓰기는 프로젝트당 ${REWRITES_PER_CREDIT}번까지예요.`, retryable: false });
@@ -98,7 +102,7 @@ async function handlePOST(request: Request) {
       type: "done",
       document: { kind, status: "ready", content: newContent, rewriteCount: doc.rewrite_count + 1 },
       section: newSection,
-      rewritesLeft: Math.max(0, REWRITES_PER_CREDIT - used - 1),
+      rewritesLeft: isDeveloper ? UNLIMITED_REWRITES : Math.max(0, REWRITES_PER_CREDIT - used - 1),
     });
   });
 }

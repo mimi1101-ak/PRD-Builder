@@ -10,11 +10,11 @@ const navLink =
 
 export async function SiteHeader() {
   const viewer = await getViewer();
-  let profile: { nickname: string | null; credits: number } | null = null;
+  let profile: { nickname: string | null; credits: number; is_admin: boolean } | null = null;
   if (viewer.userId) {
     const supabase = await createClient();
-    const { data } = await supabase.from("profiles").select("nickname, credits").eq("id", viewer.userId).maybeSingle();
-    profile = data ?? { nickname: null, credits: 0 };
+    const { data } = await supabase.from("profiles").select("nickname, credits, is_admin").eq("id", viewer.userId).maybeSingle();
+    profile = data ?? { nickname: null, credits: 0, is_admin: false };
   }
 
   return (
@@ -33,7 +33,7 @@ export async function SiteHeader() {
               <Link href="/credits" className={navLink}>
                 크레딧 <span className="font-mono text-xs font-medium text-foreground">{profile.credits}</span>
               </Link>
-              <UserMenu nickname={profile.nickname ?? "메이커"} />
+              <UserMenu nickname={profile.nickname ?? "메이커"} isDeveloper={profile.is_admin} />
             </>
           ) : (
             <Button asChild variant="outline" size="sm" className="ml-1.5">
