@@ -49,7 +49,14 @@
    - 카카오: 앱 아이콘을 `../brand/dotprd-logo-128.png` 로, 회사명 MIYA STUDIO, 앱 이름 dot.PRD 로 바꾸기(사용자가 직접).
    - 그다음 다른 계정으로 배포 사이트 로그인·PRD 생성 확인.
 6. 운영자 이름 MIYA STUDIO(바닥글·약관 상호·개인정보처리방침 운영자), 개인정보 문의 연락처 기재 완료. 사업자등록 후 약관의 대표자·사업자등록번호 등 채우기.
-7. 참고: Anthropic 콘솔에 월 사용 한도 걸기, 결제 열면 Vercel Pro 로 전환(Hobby 는 비상업용). 로그인 창의 supabase.co 주소를 없애려면 내 도메인 + Supabase Custom Domain(유료).
+7. ~~개발자 도구~~ 완료(2026-10-07, 시안 `design-mockup/admin.html` 승인 후 적용, 마이그레이션 `developer_tools`):
+   - `profiles.is_admin` = 운영자 계정 2개(erin8751@gmail.com 구글, erin8751@naver.com 카카오)만 true. 브라우저에서는 못 바꿈. 새 개발자 계정은 SQL 로 직접 켠다.
+   - 개발자 계정: 무료 PRD·다시 쓰기 제한 없음, 잠금 해제 때 크레딧 차감 없음(`unlock_project` 안에서), 확인 창 생략. 분당 메시지 제한은 유지.
+   - `/admin`: 이메일로 사용자 찾기 → 크레딧 1~100건 넣기(+메모) → 최근 지급 내역. `grant_credits` 함수가 개발자 확인·지급·`credit_grants` 기록을 한 번에. 넣기만 있고 빼기는 없음.
+   - 개발자가 아니면 `/admin`·`/api/admin/*` 모두 404. 사용자 메뉴의 "개발자 도구" 링크도 개발자만 보임.
+   - 화면 아래를 MOMO 가 돌아다님(`components/admin/momo-walker.tsx`, 걷기 두 장·앉기·깜빡·졸기, 누르면 한마디, 지급하면 축하).
+   - 다음 dev 서버를 동시에 두 개 못 띄움(Next 16). 다른 창에서 3000 이 떠 있으면 `npm run build` 후 `prd-builder-prod`(next start, 3100) 로 확인.
+8. 참고: Anthropic 콘솔에 월 사용 한도 걸기, 결제 열면 Vercel Pro 로 전환(Hobby 는 비상업용). 로그인 창의 supabase.co 주소를 없애려면 내 도메인 + Supabase Custom Domain(유료).
 
 ## 알아 둘 것
 
