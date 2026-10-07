@@ -1,4 +1,4 @@
-# PRD 빌더 — 질문형 PRD 생성기
+# dot.PRD — 질문형 PRD 생성기
 
 아이디어 한 줄 → AI 기획자의 질문 5~10개 → 최종 확인 → **PRD · 작업 단계 · CLAUDE.md**.
 요구사항 원문은 [`docs/PRD.md`](docs/PRD.md).

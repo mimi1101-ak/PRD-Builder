@@ -98,8 +98,8 @@ export const MAX_MESSAGES_PER_PROJECT = 80;
 export const MAX_INPUT_LENGTH = 2000;
 
 export const PRODUCTS = {
-  credit_1: { credits: 1, amount: 3900, name: "PRD 빌더 크레딧 1건" },
-  credit_5: { credits: 5, amount: 14900, name: "PRD 빌더 크레딧 5건" },
+  credit_1: { credits: 1, amount: 3900, name: "dot.PRD 크레딧 1건" },
+  credit_5: { credits: 5, amount: 14900, name: "dot.PRD 크레딧 5건" },
 } as const;
 export type ProductKey = keyof typeof PRODUCTS;
 

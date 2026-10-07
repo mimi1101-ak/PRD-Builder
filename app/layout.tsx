@@ -25,8 +25,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "PRD 빌더 — 질문에 답하면 PRD가 완성돼요",
-    template: "%s · PRD 빌더",
+    default: "dot.PRD — 질문에 답하면 PRD가 완성돼요",
+    template: "%s · dot.PRD",
   },
   description:
     "아이디어 한 줄을 넣으면 질문 5~10개로 빈 곳을 채운 뒤, 클로드 코드에 바로 넣을 수 있는 PRD·작업 단계·CLAUDE.md를 만들어 드려요.",

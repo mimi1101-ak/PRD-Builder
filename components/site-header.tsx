@@ -22,7 +22,7 @@ export async function SiteHeader() {
       <div className="flex h-full items-center justify-between gap-2 px-4 sm:px-8 lg:px-12">
         <Link href="/" className="flex items-center gap-2.5 text-[15px] font-semibold tracking-tight">
           <Logo className="size-5" />
-          <span>PRD 빌더</span>
+          <span>dot.PRD</span>
         </Link>
         <nav className="flex items-center gap-0.5 text-[13.5px] text-ink-2">
           <Link href="/projects" className={navLink}>
