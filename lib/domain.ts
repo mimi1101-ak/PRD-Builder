@@ -36,6 +36,14 @@ export type IdeaSummary = {
 } & Record<AreaKey, string>;
 
 export type ProjectStatus = "interviewing" | "final_check" | "done";
+export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
+  interviewing: "인터뷰 중",
+  final_check: "최종 확인 중",
+  done: "완료",
+};
+// 내 프로젝트 보기 방식 (우주 / 목록). 고른 보기는 쿠키에 기억해 새로고침해도 깜빡이지 않게 한다.
+export type ProjectsViewMode = "space" | "list";
+export const PROJECTS_VIEW_COOKIE = "prd_projects_view";
 export type Phase = "interview" | "final_check";
 export type DocKind = "prd" | "tasks" | "claude_md";
 export type DocStatus = "generating" | "ready" | "failed";

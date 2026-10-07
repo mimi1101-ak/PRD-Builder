@@ -3,7 +3,8 @@
 @import "shadcn/tailwind.css";
 @plugin "@tailwindcss/typography";
 
-@custom-variant dark (&:is(.dark *));
+/* 내 프로젝트의 우주 보기도 어두운 테마로 취급한다 (아래 :has 규칙과 짝) */
+@custom-variant dark (&:is(.dark *, :root:has([data-universe]) *));
 
 @theme inline {
   --color-background: var(--background);
@@ -103,7 +104,9 @@
   --sidebar-ring: #0b0b0b;
 }
 
-.dark {
+/* 우주 보기([data-universe])가 화면에 있으면 머리글·팝업까지 페이지 전체가 어두워진다 */
+.dark,
+:root:has([data-universe]) {
   --brand: #f5f5f4;
   --brand-foreground: #0b0b0b;
   --brand-soft: #1c1c1b;
@@ -397,4 +400,87 @@
 }
 .doc-prose > :first-child {
   margin-top: 0;
+}
+
+/* ───────── 내 프로젝트 우주 (한 페이지 = 가로 5 × 세로 2) ───────── */
+:root:has([data-universe]) {
+  --background: #050507;
+}
+.universe-pager {
+  position: relative;
+  overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+}
+.universe-track {
+  display: flex;
+  transition: transform 0.75s cubic-bezier(0.2, 0.7, 0.1, 1);
+}
+.universe-track[data-dragging] {
+  transition: none;
+}
+.universe-page {
+  flex: 0 0 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-rows: repeat(2, var(--rowh));
+  column-gap: 16px;
+  row-gap: clamp(28px, 6vh, 64px);
+  padding: 16px max(72px, calc((100% - 1320px) / 2 + 24px)) 24px;
+}
+/* 행성 하나: 칸 안에서 조금 어긋나 있고, 각자 다른 속도로 둥둥 떠다닌다 */
+.universe-planet {
+  position: relative;
+  min-width: 0;
+  translate: var(--dx, 0) var(--dy, 0);
+  animation:
+    planet-appear 0.9s cubic-bezier(0.2, 0.7, 0.1, 1) var(--delay, 0s) both,
+    planet-float var(--fd, 8s) ease-in-out var(--fdel, 0s) infinite alternate;
+}
+@keyframes planet-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes planet-float {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(var(--fx, 0), var(--fy, 0));
+  }
+}
+.universe-side {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  z-index: 3;
+}
+.universe-side[data-dir="prev"] {
+  left: max(14px, calc((100% - 1320px) / 2 - 36px));
+}
+.universe-side[data-dir="next"] {
+  right: max(14px, calc((100% - 1320px) / 2 - 36px));
+}
+/* 휴대폰: 가로 2 × 세로 5 (똑같이 10개) */
+@media (max-width: 719px) {
+  .universe-page {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(5, var(--rowh));
+    column-gap: 10px;
+    row-gap: 22px;
+    padding: 8px 14px 18px;
+  }
+  .universe-side {
+    display: none;
+  }
+}
+@media (hover: none) {
+  .universe-side {
+    display: none;
+  }
 }

@@ -20,16 +20,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { readJsonError } from "@/lib/ndjson";
+import { cn } from "@/lib/utils";
 
 // 프로젝트 줄 오른쪽의 ⋮ 부가 메뉴. 지금은 삭제하기만 있다.
 export function ProjectMenu({
   projectId,
   title,
   unlocked,
+  className,
 }: {
   projectId: string;
   title: string;
   unlocked: boolean;
+  className?: string;
 }) {
   const router = useRouter();
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -63,7 +66,7 @@ export function ProjectMenu({
             variant="ghost"
             size="icon-sm"
             aria-label={`${title} 메뉴`}
-            className="text-muted-foreground hover:text-foreground"
+            className={cn("text-muted-foreground hover:text-foreground", className)}
           >
             <EllipsisVertical />
           </Button>
