@@ -6,11 +6,19 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { Button } from "@/components/ui/button";
 import { LoginButtons } from "@/components/login-buttons";
 import { SiteFooter } from "@/components/site-footer";
+import { ProjectMenu } from "@/components/projects/project-menu";
 import type { ProjectStatus } from "@/lib/domain";
 
 export const metadata = { title: "내 프로젝트" };
 
-type Row = { id: string; title: string | null; idea: string; status: ProjectStatus; created_at: string };
+type Row = {
+  id: string;
+  title: string | null;
+  idea: string;
+  status: ProjectStatus;
+  unlocked: boolean;
+  created_at: string;
+};
 
 const STATUS_LABEL: Record<ProjectStatus, string> = {
   interviewing: "인터뷰 중",
@@ -36,7 +44,7 @@ export default async function ProjectsPage() {
     const supabase = await createClient();
     const { data } = await supabase
       .from("projects")
-      .select("id, title, idea, status, created_at")
+      .select("id, title, idea, status, unlocked, created_at")
       .order("created_at", { ascending: false });
     rows = (data ?? []) as Row[];
   } else if (viewer.guestToken) {
@@ -44,7 +52,7 @@ export default async function ProjectsPage() {
     const admin = createAdminClient();
     const { data } = await admin
       .from("projects")
-      .select("id, title, idea, status, created_at")
+      .select("id, title, idea, status, unlocked, created_at")
       .eq("guest_token", viewer.guestToken)
       .is("user_id", null)
       .order("created_at", { ascending: false });
@@ -89,10 +97,10 @@ export default async function ProjectsPage() {
             {rows.map((p, i) => {
               const href = p.status === "done" ? `/p/${p.id}` : `/p/${p.id}/chat`;
               return (
-                <li key={p.id} className="border-b">
+                <li key={p.id} className="flex items-center gap-1 border-b transition-colors hover:bg-muted/50 sm:pr-2">
                   <Link
                     href={href}
-                    className="group grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-4 py-5 transition-colors hover:bg-muted/50 sm:grid-cols-[48px_minmax(0,1fr)_auto_auto] sm:px-2"
+                    className="group grid min-w-0 flex-1 grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-4 py-5 sm:grid-cols-[48px_minmax(0,1fr)_auto_auto] sm:px-2"
                   >
                     <span className="font-mono text-[11px] text-muted-foreground">{String(i + 1).padStart(2, "0")}</span>
                     <div className="min-w-0">
@@ -112,6 +120,7 @@ export default async function ProjectsPage() {
                       <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
                     </span>
                   </Link>
+                  <ProjectMenu projectId={p.id} title={p.title || p.idea} unlocked={p.unlocked} />
                 </li>
               );
             })}
