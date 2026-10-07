@@ -573,7 +573,7 @@ function DocPanel({
   }
 
   if (doc.status === "failed" || doc.status === "missing") {
-    const noRetry = doc.errorCode === "daily_limit";
+    const noRetry = doc.errorCode === "free_limit";
     return (
       <div className="rounded-2xl border p-6">
         <p className="flex items-start gap-2 text-sm">

@@ -6,7 +6,7 @@ import { jsonError, ndjsonResponse } from "@/lib/ndjson";
 import { generateDocument } from "@/lib/ai/documents";
 import { describeAiError } from "@/lib/ai/client";
 import { loadCredits, loadDocuments, loadMessages } from "@/lib/projects";
-import { FREE_DAILY_GENERATIONS, normalizeCoverage, normalizeSummary, type DocKind } from "@/lib/domain";
+import { FREE_PRD_PER_ACCOUNT, normalizeCoverage, normalizeSummary, type DocKind } from "@/lib/domain";
 
 // 문서는 상위 모델로 길게 쓰므로 넉넉히
 export const maxDuration = 300;
@@ -17,7 +17,7 @@ const GenerateSchema = z.object({
 });
 
 // 문서 만들기 (PRD 7장 ②)
-// - PRD: 무료, 계정당 하루 3회
+// - PRD: 무료, 계정당 3개까지 (다 쓰면 더 만들 수 없음)
 // - 작업 단계·CLAUDE.md: 잠금 해제된 프로젝트만. 처음 열 때(작업 단계 생성 성공 시점)에 크레딧 1 차감
 // - 실패한 생성은 횟수·크레딧을 차감하지 않는다
 async function handlePOST(request: Request) {
@@ -72,14 +72,14 @@ async function handlePOST(request: Request) {
   if (kind === "prd") {
     const { data: allowed } = await admin.rpc("consume_free_generation", {
       p_user_id: userId,
-      p_limit: FREE_DAILY_GENERATIONS,
+      p_limit: FREE_PRD_PER_ACCOUNT,
     });
     if (!allowed) {
       await markFailed();
       return jsonError(
         429,
-        `무료 PRD 생성은 하루 ${FREE_DAILY_GENERATIONS}번까지예요. 내일 다시 시도해 주세요.`,
-        "daily_limit",
+        `무료로 만들 수 있는 PRD ${FREE_PRD_PER_ACCOUNT}개를 모두 만들었어요. 만든 PRD는 내 프로젝트에서 언제든 다시 볼 수 있어요.`,
+        "free_limit",
       );
     }
   }

@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { BuyButtons } from "@/components/credits/buy-buttons";
 import { LoginButtons } from "@/components/login-buttons";
 import { SiteFooter } from "@/components/site-footer";
-import { FREE_DAILY_GENERATIONS, REWRITES_PER_CREDIT } from "@/lib/domain";
+import { FREE_PRD_PER_ACCOUNT, REWRITES_PER_CREDIT } from "@/lib/domain";
 
 export const metadata = { title: "크레딧" };
 
@@ -79,8 +79,8 @@ export default async function CreditsPage(props: PageProps<"/credits">) {
             다운로드, 섹션 다시 쓰기 {REWRITES_PER_CREDIT}회. 한 번 연 프로젝트는 계속 볼 수 있어요.
           </p>
           <p className="mt-1">
-            <b className="text-foreground">무료</b>: 아이디어 인터뷰는 무제한, PRD 열람·복사는 언제나 무료예요 (PRD
-            생성은 하루 {FREE_DAILY_GENERATIONS}회).
+            <b className="text-foreground">무료</b>: MOMO와의 인터뷰는 무제한이에요. 가입하면 기획서(PRD){" "}
+            {FREE_PRD_PER_ACCOUNT}개를 무료로 만들 수 있어요. 만든 PRD는 언제든 다시 보고 복사할 수 있어요.
           </p>
           <p className="mt-1">
             결제는 토스페이먼츠로 안전하게 처리돼요. 현재 테스트 모드에서는 실제 돈이 나가지 않아요.

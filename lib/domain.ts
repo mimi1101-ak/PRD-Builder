@@ -91,7 +91,7 @@ export const MAX_QUESTIONS = 10;
 export const DONT_KNOW_MESSAGE = "잘 모르겠어요. 추천해 주세요.";
 
 // 요금·제한 (PRD 8·9장)
-export const FREE_DAILY_GENERATIONS = 3;
+export const FREE_PRD_PER_ACCOUNT = 3; // 무료 PRD 생성: 계정당 3개 (인터뷰는 무제한)
 export const REWRITES_PER_CREDIT = 3;
 export const MESSAGES_PER_MINUTE = 20;
 export const MAX_MESSAGES_PER_PROJECT = 80;
