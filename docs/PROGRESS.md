@@ -43,6 +43,13 @@
    - 고친 것: 잠금 해제 후 헤더의 크레딧 숫자가 새로고침 전까지 안 바뀌던 문제 → `components/results/result-view.tsx` 에서 크레딧이 바뀌면 `router.refresh()`. 다음 잠금 해제 때 바로 바뀌는지 한 번 더 확인할 것.
 3. 토스페이먼츠 테스트 키 받으면 `.env.local` 에 넣고 결제 테스트.
 4. ~~배포(Vercel)~~ 완료(2026-10-07): https://dot-prd.vercel.app (GitHub main 자동 배포, Vercel 프로젝트 이름 `dot-prd.vercel.app`). 환경변수 4개(토스 2개는 키 없어서 뺌). Supabase Site URL·Redirect URLs 에 배포 주소 등록. 배포 사이트 로그인 확인 필요.
+5. **구글·카카오 로그인 공개 준비** (2026-10-07 진행 중)
+   - 구글 클라우드 OAuth: 범위는 email·profile·openid 만. 브랜딩(앱 이름 dot.PRD, 로고 `../brand/dotprd-logo-120.png`)이 "홈페이지 소유 미확인"으로 반려 → 서치 콘솔에서 `https://dot-prd.vercel.app` 소유권 확인 완료(meta 태그 + `public/google258d639182ad46b3.html`, 둘 다 지우지 말 것).
+   - **다음:** 2026-10-08 이후 브랜딩 화면 [문제 보기 → 문제를 해결함 → 계속]으로 재인증 요청. [대상]에서 앱 게시 상태가 "테스트 중"이면 게시(안 하면 다른 사람은 구글 로그인 불가).
+   - 카카오: 앱 아이콘을 `../brand/dotprd-logo-128.png` 로, 회사명 MIYA STUDIO, 앱 이름 dot.PRD 로 바꾸기(사용자가 직접).
+   - 그다음 다른 계정으로 배포 사이트 로그인·PRD 생성 확인.
+6. 운영자 이름 MIYA STUDIO(바닥글·약관 상호·개인정보처리방침 운영자), 개인정보 문의 연락처 기재 완료. 사업자등록 후 약관의 대표자·사업자등록번호 등 채우기.
+7. 참고: Anthropic 콘솔에 월 사용 한도 걸기, 결제 열면 Vercel Pro 로 전환(Hobby 는 비상업용). 로그인 창의 supabase.co 주소를 없애려면 내 도메인 + Supabase Custom Domain(유료).
 
 ## 알아 둘 것
 
