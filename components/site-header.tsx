@@ -31,7 +31,12 @@ export async function SiteHeader() {
           {profile ? (
             <>
               <Link href="/credits" className={navLink}>
-                크레딧 <span className="font-mono text-xs font-medium text-foreground">{profile.credits}</span>
+                크레딧{" "}
+                {profile.is_admin ? (
+                  <span className="text-xs font-medium text-foreground">무제한</span>
+                ) : (
+                  <span className="font-mono text-xs font-medium text-foreground">{profile.credits}</span>
+                )}
               </Link>
               <UserMenu nickname={profile.nickname ?? "메이커"} isDeveloper={profile.is_admin} />
             </>
