@@ -56,7 +56,13 @@
    - 개발자가 아니면 `/admin`·`/api/admin/*` 모두 404. 사용자 메뉴의 "개발자 도구" 링크도 개발자만 보임.
    - 화면 아래를 MOMO 가 돌아다님(`components/admin/momo-walker.tsx`, 걷기 두 장·앉기·깜빡·졸기, 누르면 한마디, 지급하면 축하).
    - 다음 dev 서버를 동시에 두 개 못 띄움(Next 16). 다른 창에서 3000 이 떠 있으면 `npm run build` 후 `prd-builder-prod`(next start, 3100) 로 확인.
-8. 참고: Anthropic 콘솔에 월 사용 한도 걸기, 결제 열면 Vercel Pro 로 전환(Hobby 는 비상업용). 로그인 창의 supabase.co 주소를 없애려면 내 도메인 + Supabase Custom Domain(유료).
+8. **단계별 / 원샷 모드** (2026-10-08, 시안 `../design-mockup/modes.html` 승인 후 적용, 개선안 `../dot.PRD 개선안 — 단계별 원샷 모드 (수정본).md`)
+   - 문서 생성·DB·크레딧은 그대로. 잠금 해제(크레딧 1건)하면 두 모드 모두 쓸 수 있다.
+   - 결과 화면: 잠금 해제 뒤 제목 아래 「단계별 | 원샷」 전환(브라우저에 프로젝트별 기억, `prd-builder:mode:{id}`). 바꾸면 작업 단계 탭으로 이동.
+   - 원샷이면 작업 단계 탭 맨 위에 `components/results/one-shot-card.tsx`: 안전장치 4개, 단계별 추천, 폴더 그림, 자동 완성 프롬프트(`lib/domain.ts` 의 `ONE_SHOT_PROMPT`, 사용자가 준 원문을 다듬은 것). 도구 이름·멈추는 법은 프로젝트의 도구(클로드 코드/커서/기타)에 맞춤.
+   - 잠금 카드 혜택에 "한 번에 끝까지 만드는 원샷 프롬프트" 한 줄 추가.
+   - 확인: 임시 견본 페이지로 잠김·단계별·원샷·커서 문구·새로고침 유지·390px 확인(로컬 로그인 없음). **배포 후 실제 계정으로 한 번 더 확인할 것.**
+9. 참고: Anthropic 콘솔에 월 사용 한도 걸기, 결제 열면 Vercel Pro 로 전환(Hobby 는 비상업용). 로그인 창의 supabase.co 주소를 없애려면 내 도메인 + Supabase Custom Domain(유료).
 
 ## 알아 둘 것
 

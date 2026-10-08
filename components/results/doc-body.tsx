@@ -136,15 +136,49 @@ export function stepAnchor(n: number) {
   return `step-${n}`;
 }
 
+// 검은 프롬프트 상자 + 복사 버튼 (작업 단계 카드, 원샷 카드)
+export function PromptBox({ text, fullHeight = false }: { text: string; fullHeight?: boolean }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="relative mt-[18px] rounded-[14px] bg-foreground px-[22px] py-5 text-[#e9e9e6]">
+      <p className="mono-label mb-2.5 text-[10px] text-[#8b8b87]">Prompt</p>
+      <button
+        type="button"
+        onClick={() =>
+          void copyText(text, () => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1400);
+          })
+        }
+        className="mono-label absolute right-3.5 top-3.5 inline-flex h-7 items-center gap-1.5 rounded-full border border-white/25 px-3 text-[10px] text-white transition-colors hover:bg-white hover:text-foreground"
+      >
+        {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
+        {copied ? "복사됨" : "프롬프트 복사"}
+      </button>
+      <pre
+        className={cn(
+          "overflow-auto whitespace-pre-wrap break-words font-mono text-[12.5px] leading-[1.85]",
+          !fullHeight && "max-h-60",
+        )}
+      >
+        {text}
+      </pre>
+    </div>
+  );
+}
+
 // 작업 단계: 단계별 카드 + 체크박스
+// oneShot 이 있으면(원샷 모드) 문서 제목 아래에 그 안내를 넣고, 단계별 사용법 문단 대신 "참고" 표시를 단다.
 export function TaskSteps({
   projectId,
   content,
   onRewrite,
+  oneShot,
 }: {
   projectId: string;
   content: string;
   onRewrite?: (target: RewriteTarget) => void;
+  oneShot?: React.ReactNode;
 }) {
   const parsed = useMemo(() => parseTaskSteps(content), [content]);
   const storageKey = `prd-builder:tasks:${projectId}`;
@@ -167,13 +201,34 @@ export function TaskSteps({
     writeChecks(storageKey, JSON.stringify(next));
   }
 
-  if (!parsed) return <DocBody content={content} onRewrite={onRewrite} />;
+  if (!parsed) {
+    return (
+      <div>
+        {oneShot}
+        <DocBody content={content} onRewrite={onRewrite} />
+      </div>
+    );
+  }
 
   const total = parsed.steps.length;
   const doneCount = parsed.steps.filter((s) => checked.includes(s.number)).length;
+  const introTitle = parsed.intro
+    .split("\n")
+    .filter((line) => /^#\s/.test(line))
+    .join("\n");
   return (
     <div>
-      {parsed.intro && <Markdown className="[&_blockquote]:border-l-0 [&_blockquote]:pl-0">{parsed.intro}</Markdown>}
+      {oneShot ? (
+        <>
+          {introTitle && <Markdown>{introTitle}</Markdown>}
+          {oneShot}
+          <p className="mono-label mt-12 flex items-center gap-3.5 text-[10px] text-ink-4 after:h-px after:flex-1 after:bg-border">
+            참고 · AI가 따라갈 단계 {total}개
+          </p>
+        </>
+      ) : (
+        parsed.intro && <Markdown className="[&_blockquote]:border-l-0 [&_blockquote]:pl-0">{parsed.intro}</Markdown>
+      )}
       <div className="mt-6 flex items-center gap-[18px]">
         <span className="mono-label shrink-0 text-muted-foreground">
           진행 {doneCount} / {total}
@@ -219,7 +274,6 @@ function StepCard({
   onRewrite?: (target: RewriteTarget) => void;
 }) {
   const title = step.heading.replace(/^##\s+/, "");
-  const [copied, setCopied] = useState(false);
   return (
     <section
       id={stepAnchor(step.number)}
@@ -258,27 +312,7 @@ function StepCard({
             </label>
           </div>
         </div>
-        {step.prompt && (
-          <div className="relative mt-[18px] rounded-[14px] bg-foreground px-[22px] py-5 text-[#e9e9e6]">
-            <p className="mono-label mb-2.5 text-[10px] text-[#8b8b87]">Prompt</p>
-            <button
-              type="button"
-              onClick={() =>
-                void copyText(step.prompt, () => {
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 1400);
-                })
-              }
-              className="mono-label absolute right-3.5 top-3.5 inline-flex h-7 items-center gap-1.5 rounded-full border border-white/25 px-3 text-[10px] text-white transition-colors hover:bg-white hover:text-foreground"
-            >
-              {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
-              {copied ? "복사됨" : "프롬프트 복사"}
-            </button>
-            <pre className="max-h-60 overflow-auto whitespace-pre-wrap break-words font-mono text-[12.5px] leading-[1.85]">
-              {step.prompt}
-            </pre>
-          </div>
-        )}
+        {step.prompt && <PromptBox text={step.prompt} />}
         {step.check && (
           <p className="mt-3.5 text-sm text-ink-2">
             <b className="font-semibold text-foreground">완료 확인</b> — {step.check}

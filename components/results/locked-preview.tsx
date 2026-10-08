@@ -60,6 +60,7 @@ export function LockedPreview({
 }) {
   const perks = [
     { label: "작업 단계 8~15개 + CLAUDE.md", meta: "2 files" },
+    { label: "한 번에 끝까지 만드는 원샷 프롬프트", meta: "+ 1" },
     { label: "세 파일 한 번에 받기", meta: ".zip" },
     { label: "섹션 다시 쓰기", meta: `× ${REWRITES_PER_CREDIT}` },
   ];

@@ -63,6 +63,25 @@ export const DOC_FILES: Record<DocKind, { name: string; zipPath: string }> = {
   claude_md: { name: "CLAUDE.md", zipPath: "CLAUDE.md" },
 };
 
+// 결과 화면의 진행 방식. 문서(PRD·TASKS·CLAUDE.md)는 같고, 원샷은 자동 완성 프롬프트 하나로 TASKS.md를 끝까지 진행한다.
+// 잠금 해제(크레딧 1건)하면 두 방식 모두 쓸 수 있다.
+export type BuildMode = "step" | "oneshot";
+export const BUILD_MODES: BuildMode[] = ["step", "oneshot"];
+export const BUILD_MODE_LABELS: Record<BuildMode, string> = { step: "단계별", oneshot: "원샷" };
+export const BUILD_MODE_DESCRIPTIONS: Record<BuildMode, string> = {
+  step: "한 단계씩 붙여 넣고 확인하며 만들어요",
+  oneshot: "프롬프트 한 번으로 AI가 끝까지 만들어요",
+};
+
+// 원샷 모드에서 붙여 넣는 프롬프트. CLAUDE.md·TASKS.md 의 "확인받기" 지시를 이번 실행에서만 풀어 준다.
+export const ONE_SHOT_PROMPT = `docs/PRD.md와 CLAUDE.md를 읽어. 이번엔 '자동 완성 모드'로 진행해.
+
+- 단계마다 확인받지 말고 docs/TASKS.md 순서대로 마지막 단계까지 진행해. CLAUDE.md와 TASKS.md에 있는 "확인받기", "먼저 물어봐", "계획부터 설명해" 같은 멈춤 지시는 이번엔 따르지 않아도 돼.
+- 미결 사항(PRD 9장)은 가장 단순하고 무료인 선택지로 정하고(무료가 없으면 가장 저렴한 것), 정한 내용을 docs/DECISIONS.md에 적어.
+- DB는 Supabase MCP로 만들고, 마이그레이션 SQL도 supabase/migrations에 남겨.
+- API 키가 없어서 못 하는 부분은 가짜로 만들지 말고, "키 필요" 목록으로 마지막에 보고해.
+- 각 단계가 끝나면 npm run build가 통과하는지 확인하고, 에러는 직접 고쳐.`;
+
 export const TOOLS = [
   { value: "claude_code", label: "클로드 코드" },
   { value: "cursor", label: "커서" },
@@ -79,6 +98,18 @@ export type ExperienceValue = (typeof EXPERIENCES)[number]["value"];
 
 export function toolLabel(value: string | null | undefined) {
   return TOOLS.find((t) => t.value === value)?.label ?? "클로드 코드";
+}
+
+// 문장 안에 넣을 도구 이름 ("기타"는 문장에 어울리게)
+export function toolName(value: string | null | undefined) {
+  return value === "other" ? "AI 코딩 도구" : toolLabel(value);
+}
+
+// 진행 중인 AI 를 멈추는 방법
+export function toolStopHint(value: string | null | undefined) {
+  if (value === "cursor") return "정지 버튼을 누르면 멈춰요.";
+  if (value === "other") return "도구의 정지 버튼을 누르면 멈춰요.";
+  return "Esc를 누르면 멈춰요.";
 }
 
 export function experienceLabel(value: string | null | undefined) {

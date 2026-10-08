@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Download, FileArchive, Loader2, Lock, MessageSquare, RotateCcw } from "lucide-react";
@@ -19,13 +19,18 @@ import { BlackHole } from "@/components/black-hole";
 import { Markdown, headingId, splitHeadingNumber } from "@/components/markdown";
 import { CopyButton, DocBody, TaskSteps, stepAnchor, type RewriteTarget } from "@/components/results/doc-body";
 import { LockedPreview } from "@/components/results/locked-preview";
+import { OneShotCard } from "@/components/results/one-shot-card";
 import { RewriteDialog } from "@/components/results/rewrite-dialog";
 import {
+  BUILD_MODES,
+  BUILD_MODE_DESCRIPTIONS,
+  BUILD_MODE_LABELS,
   DOC_FILES,
   DOC_KINDS,
   DOC_LABELS,
   REWRITES_PER_CREDIT,
   rewritesLeftLabel,
+  type BuildMode,
   type DocKind,
   type ProjectView,
 } from "@/lib/domain";
@@ -57,6 +62,35 @@ type DocumentsResponse = {
 };
 
 const STALE_LOCK_MS = 5.5 * 60 * 1000;
+
+// 고른 진행 방식(단계별/원샷)은 이 브라우저(localStorage)에 프로젝트별로 기억한다.
+const MODE_EVENT = "prd-builder:mode";
+
+function subscribeMode(onChange: () => void) {
+  window.addEventListener("storage", onChange);
+  window.addEventListener(MODE_EVENT, onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener(MODE_EVENT, onChange);
+  };
+}
+
+function readMode(key: string): BuildMode {
+  try {
+    return localStorage.getItem(key) === "oneshot" ? "oneshot" : "step";
+  } catch {
+    return "step"; // 저장소를 쓸 수 없으면 기본값
+  }
+}
+
+function writeMode(key: string, mode: BuildMode) {
+  try {
+    localStorage.setItem(key, mode);
+  } catch {
+    // 무시
+  }
+  window.dispatchEvent(new Event(MODE_EVENT));
+}
 
 function toUi(doc: DocState | null): DocUi {
   if (!doc) return { status: "missing", content: "", rewriteCount: 0 };
@@ -96,6 +130,20 @@ export function ResultView({
   const [credits, setCredits] = useState(initialCredits);
   const [rewritesLeft, setRewritesLeft] = useState(initialRewritesLeft);
   const [tab, setTab] = useState<DocKind>("prd");
+  const modeKey = `prd-builder:mode:${projectId}`;
+  const mode = useSyncExternalStore(
+    subscribeMode,
+    () => readMode(modeKey),
+    () => "step" as BuildMode,
+  );
+  // 진행 방식을 바꾸면 차이가 보이는 작업 단계 탭으로 간다
+  const chooseMode = useCallback(
+    (next: BuildMode) => {
+      writeMode(modeKey, next);
+      setTab("tasks");
+    },
+    [modeKey],
+  );
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [rewrite, setRewrite] = useState<{ kind: DocKind; target: RewriteTarget } | null>(null);
 
@@ -336,7 +384,30 @@ export function ResultView({
           </div>
         </div>
 
-        <div className="mt-11 flex items-center gap-3 border-b">
+        {unlocked && (
+          <div className="mt-10 flex flex-wrap items-center gap-x-4 gap-y-2.5">
+            <span className="mono-label text-[10px] text-ink-4">Mode</span>
+            <div role="group" aria-label="진행 방식" className="inline-flex rounded-full border border-line-strong bg-background p-[3px]">
+              {BUILD_MODES.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  aria-pressed={mode === m}
+                  onClick={() => chooseMode(m)}
+                  className={cn(
+                    "h-8 rounded-full px-4 text-[13.5px] text-muted-foreground transition-colors hover:text-foreground",
+                    mode === m && "bg-foreground text-background hover:text-background",
+                  )}
+                >
+                  {BUILD_MODE_LABELS[m]}
+                </button>
+              ))}
+            </div>
+            <span className="basis-full text-[13.5px] text-muted-foreground sm:basis-auto">{BUILD_MODE_DESCRIPTIONS[mode]}</span>
+          </div>
+        )}
+
+        <div className={cn("flex items-center gap-3 border-b", unlocked ? "mt-5" : "mt-11")}>
           <div role="tablist" aria-label="문서" className="flex gap-6 overflow-x-auto [scrollbar-width:none] sm:gap-8">
             {DOC_KINDS.map((kind, i) => (
               <button
@@ -394,6 +465,11 @@ export function ResultView({
                 projectId={projectId}
                 unlocked={unlocked}
                 rewritesLeft={rewritesLeft}
+                oneShot={
+                  unlocked && mode === "oneshot" ? (
+                    <OneShotCard tool={project.tool} onPickStep={() => chooseMode("step")} />
+                  ) : undefined
+                }
                 onRetry={() => (tab === "prd" ? void generate("prd") : void generatePaidDocs())}
                 onRewrite={(target) => setRewrite({ kind: tab, target })}
               />
@@ -549,6 +625,7 @@ function DocPanel({
   projectId,
   unlocked,
   rewritesLeft,
+  oneShot,
   onRetry,
   onRewrite,
 }: {
@@ -557,6 +634,8 @@ function DocPanel({
   projectId: string;
   unlocked: boolean;
   rewritesLeft: number;
+  // 원샷 모드일 때 작업 단계 맨 위에 넣을 안내
+  oneShot?: React.ReactNode;
   onRetry: () => void;
   onRewrite: (target: RewriteTarget) => void;
 }) {
@@ -623,7 +702,12 @@ function DocPanel({
         {unlocked && ` · 다시 쓰기 ${rewritesLeftLabel(rewritesLeft)}`}
       </p>
       {kind === "tasks" ? (
-        <TaskSteps projectId={projectId} content={doc.content} onRewrite={canRewrite ? onRewrite : undefined} />
+        <TaskSteps
+          projectId={projectId}
+          content={doc.content}
+          onRewrite={canRewrite ? onRewrite : undefined}
+          oneShot={oneShot}
+        />
       ) : (
         <DocBody content={doc.content} onRewrite={canRewrite ? onRewrite : undefined} />
       )}
