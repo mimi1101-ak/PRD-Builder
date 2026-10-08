@@ -48,12 +48,15 @@ export function LockedPreview({
   projectId,
   onUnlock,
   busy,
+  isDeveloper = false,
 }: {
   kind: Exclude<DocKind, "prd">;
   credits: number;
   projectId: string;
   onUnlock: () => void;
   busy: boolean;
+  // 개발자 계정은 크레딧과 상관없이 바로 연다 (서버에서도 차감하지 않음)
+  isDeveloper?: boolean;
 }) {
   const perks = [
     { label: "작업 단계 8~15개 + CLAUDE.md", meta: "2 files" },
@@ -84,7 +87,11 @@ export function LockedPreview({
               </li>
             ))}
           </ul>
-          {credits > 0 ? (
+          {isDeveloper ? (
+            <Button onClick={onUnlock} disabled={busy} size="lg" className="h-12 w-full">
+              바로 열기 — 크레딧 무제한
+            </Button>
+          ) : credits > 0 ? (
             <Button onClick={onUnlock} disabled={busy} size="lg" className="h-12 w-full">
               크레딧 1건으로 열기 — 남은 크레딧 {credits}
             </Button>
@@ -95,7 +102,9 @@ export function LockedPreview({
               </Link>
             </Button>
           )}
-          <p className="mono-label mt-3 text-center text-[10px] text-ink-4">문서 생성에 실패하면 크레딧은 차감되지 않아요</p>
+          <p className="mono-label mt-3 text-center text-[10px] text-ink-4">
+            {isDeveloper ? "개발자 계정은 크레딧이 차감되지 않아요" : "문서 생성에 실패하면 크레딧은 차감되지 않아요"}
+          </p>
         </div>
       </div>
     </div>

@@ -40,7 +40,7 @@ export default async function CreditsPage(props: PageProps<"/credits">) {
 
   const supabase = await createClient();
   const [{ data: profile }, { data: payments }] = await Promise.all([
-    supabase.from("profiles").select("credits").eq("id", viewer.userId).maybeSingle(),
+    supabase.from("profiles").select("credits, is_admin").eq("id", viewer.userId).maybeSingle(),
     supabase
       .from("payments")
       .select("order_id, amount, credits_added, status, created_at")
@@ -58,10 +58,17 @@ export default async function CreditsPage(props: PageProps<"/credits">) {
         <div className="mt-8 flex flex-wrap items-end justify-between gap-4 border-y py-7">
           <div>
             <p className="mono-label text-muted-foreground">남은 크레딧</p>
-            <p className="mt-2 font-display text-7xl font-extralight leading-none tracking-[-0.05em]">
-              {profile?.credits ?? 0}
-              <span className="ml-2 font-sans text-lg font-normal tracking-normal text-muted-foreground">건</span>
-            </p>
+            {profile?.is_admin ? (
+              <>
+                <p className="mt-2 font-display text-7xl font-extralight leading-none tracking-[-0.05em]">무제한</p>
+                <p className="mt-3 text-sm text-muted-foreground">개발자 계정은 크레딧 없이 모든 기능을 쓸 수 있어요.</p>
+              </>
+            ) : (
+              <p className="mt-2 font-display text-7xl font-extralight leading-none tracking-[-0.05em]">
+                {profile?.credits ?? 0}
+                <span className="ml-2 font-sans text-lg font-normal tracking-normal text-muted-foreground">건</span>
+              </p>
+            )}
           </div>
           {next !== "/credits" && (
             <Link href={next} className="text-sm font-medium underline-offset-4 hover:underline">

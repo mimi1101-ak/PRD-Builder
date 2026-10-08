@@ -385,6 +385,7 @@ export function ResultView({
                 projectId={projectId}
                 busy={paidBusy}
                 onUnlock={askUnlock}
+                isDeveloper={isDeveloper}
               />
             ) : (
               <DocPanel
