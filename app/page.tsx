@@ -45,9 +45,6 @@ export default function HomePage() {
             <p className="rise order-2 text-[15px] leading-[1.8] text-ink-2 [animation-delay:320ms] md:order-none md:max-w-[360px] md:text-base">
               MOMO의 질문에 답하면, 클로드 코드나 커서에 그대로 붙여넣을 수 있는{" "}
               <b className="font-semibold text-foreground">기획서(PRD), 작업 목록, CLAUDE.md 파일</b>을 만들어 드려요.
-              <span className="mono-label mt-4 block text-muted-foreground">
-                기획서를 무료로 3번 만들어볼 수 있어요
-              </span>
             </p>
             <div className="rise [animation-delay:440ms]">
               <IdeaComposer />
