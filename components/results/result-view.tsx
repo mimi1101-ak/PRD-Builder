@@ -46,6 +46,7 @@ type Docs = Record<DocKind, DocUi>;
 
 type GenerateEvent =
   | { type: "text"; delta: string }
+  | { type: "restart" } // 서버가 검사에 걸린 문서를 다시 쓰기 시작함 → 지금까지 받은 글을 비운다
   | {
       type: "done";
       document: { kind: DocKind; content: string; rewriteCount: number };
@@ -241,6 +242,9 @@ export function ResultView({
               if (ev.type === "text") {
                 text += ev.delta;
                 pushText(kind, text);
+              } else if (ev.type === "restart") {
+                text = "";
+                pushText(kind, text);
               } else if (ev.type === "done") {
                 ok = true;
                 setUnlocked(ev.unlocked);
@@ -280,7 +284,8 @@ export function ResultView({
   );
 
   const generatePaidDocs = useCallback(async () => {
-    for (const kind of ["tasks", "claude_md"] as const) {
+    // CLAUDE.md 를 먼저 만들어야 TASKS 가 그 폴더 구조·명령을 따라 쓸 수 있다
+    for (const kind of ["claude_md", "tasks"] as const) {
       const status = docsRef.current[kind].status;
       if (status === "ready" || status === "waiting") continue;
       const ok = await generate(kind);

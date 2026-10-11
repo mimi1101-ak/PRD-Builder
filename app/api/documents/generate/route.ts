@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { jsonError, ndjsonResponse } from "@/lib/ndjson";
 import { generateDocument } from "@/lib/ai/documents";
 import { describeAiError } from "@/lib/ai/client";
+import { checkTasks } from "@/lib/doc-check";
 import { loadCredits, loadDocuments, loadMessages } from "@/lib/projects";
 import { isAdmin } from "@/lib/admin";
 import { FREE_PRD_PER_ACCOUNT, normalizeCoverage, normalizeSummary, type DocKind } from "@/lib/domain";
@@ -88,6 +89,8 @@ async function handlePOST(request: Request) {
   }
 
   const messages = await loadMessages(project.id);
+  // TASKS 는 먼저 만든 CLAUDE.md 를 받아 폴더 구조·명령을 맞춘다 (화면은 PRD → CLAUDE.md → TASKS 순서로 만든다)
+  const claudeMd = docs.claude_md?.status === "ready" ? docs.claude_md.content : "";
   const input = {
     idea: project.idea,
     tool: project.tool,
@@ -96,12 +99,25 @@ async function handlePOST(request: Request) {
     summary: normalizeSummary(project.summary),
     messages,
     prd,
+    claudeMd,
   };
 
   return ndjsonResponse(async (send) => {
     let content: string;
     try {
       content = await generateDocument(kind as DocKind, input, (delta) => send({ type: "text", delta }));
+      // CLAUDE.md 와 어긋나면(src/ 폴더, CLAUDE.md 새로 만들기 지시) 한 번만 다시 만든다.
+      // 같은 요청 안에서 다시 만들므로 크레딧·무료 횟수는 아래에서 한 번만 처리된다.
+      if (kind === "tasks") {
+        const issues = checkTasks(content, claudeMd || null);
+        if (issues.length) {
+          console.warn("[documents] tasks check failed, regenerating", project.id, issues);
+          send({ type: "restart" });
+          content = await generateDocument(kind, input, (delta) => send({ type: "text", delta }));
+          const again = checkTasks(content, claudeMd || null);
+          if (again.length) console.error("[documents] tasks check failed after retry", project.id, again);
+        }
+      }
     } catch (err) {
       console.error(`[documents] ${kind} failed`, err);
       await markFailed();

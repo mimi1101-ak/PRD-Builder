@@ -91,12 +91,13 @@ async function streamMarkdown(
 
 export async function generateDocument(
   kind: DocKind,
-  input: DocContextInput & { prd?: string },
+  input: DocContextInput & { prd?: string; claudeMd?: string },
   onText: (delta: string) => void,
 ) {
   const instruction = fill(promptSection("documents.md", kind), {
     tool: toolLabel(input.tool),
     prd: input.prd ?? "",
+    claude_md: input.claudeMd || "(아직 없음 — 공통 기준을 따르세요)",
   });
   return streamMarkdown(
     [
