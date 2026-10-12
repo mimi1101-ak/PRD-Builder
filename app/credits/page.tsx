@@ -91,6 +91,12 @@ export default async function CreditsPage(props: PageProps<"/credits">) {
           <p className="mt-1">
             결제는 토스페이먼츠로 안전하게 처리돼요. 현재 테스트 모드에서는 실제 돈이 나가지 않아요.
           </p>
+          <p className="mt-1">
+            쓰지 않은 크레딧은 결제 후 7일 이내라면 전액 환불돼요. 이미 쓴 크레딧은 환불되지 않아요.{" "}
+            <Link href="/refund" className="underline underline-offset-4 hover:text-foreground">
+              환불정책 보기
+            </Link>
+          </p>
         </div>
 
         {payments && payments.length > 0 && (

@@ -11,6 +11,9 @@ export function SiteFooter() {
         <Link href="/privacy" className="hover:text-foreground">
           개인정보처리방침
         </Link>
+        <Link href="/refund" className="hover:text-foreground">
+          환불정책
+        </Link>
       </div>
     </footer>
   );
