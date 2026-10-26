@@ -19,7 +19,7 @@ import { BlackHole } from "@/components/black-hole";
 import { Markdown, headingId, splitHeadingNumber } from "@/components/markdown";
 import { CopyButton, DocBody, TaskSteps, stepAnchor, type RewriteTarget } from "@/components/results/doc-body";
 import { LockedPreview } from "@/components/results/locked-preview";
-import { OneShotCard } from "@/components/results/one-shot-card";
+import { OneShotCard, OneShotGuide } from "@/components/results/one-shot-card";
 import { RewriteDialog } from "@/components/results/rewrite-dialog";
 import {
   BUILD_MODES,
@@ -352,6 +352,7 @@ export function ResultView({
   const active = docs[tab];
   const activeFile = DOC_FILES[tab];
   const showTools = active.status === "ready" && !isLocked(tab);
+  const oneShotView = unlocked && mode === "oneshot";
 
   function moveTab(e: React.KeyboardEvent, kind: DocKind) {
     const i = DOC_KINDS.indexOf(kind);
@@ -452,7 +453,7 @@ export function ResultView({
         </div>
 
         <div className="mt-12 grid gap-[clamp(24px,6vw,96px)] lg:grid-cols-[210px_minmax(0,1fr)]">
-          <Toc kind={tab} doc={active} locked={isLocked(tab)} />
+          <Toc kind={tab} doc={active} locked={isLocked(tab)} oneShot={oneShotView} />
           <div id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`} className="min-w-0 max-w-[740px]">
             {isLocked(tab) ? (
               <LockedPreview
@@ -471,8 +472,11 @@ export function ResultView({
                 unlocked={unlocked}
                 rewritesLeft={rewritesLeft}
                 oneShot={
-                  unlocked && mode === "oneshot" ? (
-                    <OneShotCard tool={project.tool} onPickStep={() => chooseMode("step")} />
+                  oneShotView ? (
+                    <>
+                      <OneShotCard tool={project.tool} onPickStep={() => chooseMode("step")} />
+                      <OneShotGuide tool={project.tool} />
+                    </>
                   ) : undefined
                 }
                 onRetry={() => (tab === "prd" ? void generate("prd") : void generatePaidDocs())}
@@ -541,10 +545,12 @@ function formatDate(iso: string) {
 type TocItem = { id: string; no: string; label: string };
 
 // 왼쪽 목차: PRD·CLAUDE.md 는 "## 섹션", 작업 단계는 단계 카드로 건너뛴다 (넓은 화면에서만)
-function Toc({ kind, doc, locked }: { kind: DocKind; doc: DocUi; locked: boolean }) {
+// 원샷 모드의 작업 단계 탭에는 단계 카드가 없어서 목차도 비운다.
+function Toc({ kind, doc, locked, oneShot }: { kind: DocKind; doc: DocUi; locked: boolean; oneShot: boolean }) {
   const items = useMemo<TocItem[]>(() => {
     if (locked || !doc.content) return [];
     if (kind === "tasks") {
+      if (oneShot) return [];
       const parsed = parseTaskSteps(doc.content);
       if (parsed) {
         return parsed.steps.map((s) => ({
@@ -562,7 +568,7 @@ function Toc({ kind, doc, locked }: { kind: DocKind; doc: DocUi; locked: boolean
         label: parts?.rest ?? s.title.replace(/[*_`]/g, ""),
       };
     });
-  }, [kind, doc.content, locked]);
+  }, [kind, doc.content, locked, oneShot]);
   const activeId = useActiveId(items);
 
   return (

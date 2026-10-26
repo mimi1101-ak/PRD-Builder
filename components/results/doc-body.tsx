@@ -168,7 +168,7 @@ export function PromptBox({ text, fullHeight = false }: { text: string; fullHeig
 }
 
 // 작업 단계: 단계별 카드 + 체크박스
-// oneShot 이 있으면(원샷 모드) 문서 제목 아래에 그 안내를 넣고, 단계별 사용법 문단 대신 "참고" 표시를 단다.
+// oneShot 이 있으면(원샷 모드) 문서 제목과 그 안내만 보여 주고 단계 카드는 그리지 않는다. 단계는 받은 TASKS.md 에 그대로 있다.
 export function TaskSteps({
   projectId,
   content,
@@ -201,34 +201,23 @@ export function TaskSteps({
     writeChecks(storageKey, JSON.stringify(next));
   }
 
-  if (!parsed) {
+  if (oneShot) {
+    const title = (parsed?.intro ?? content).split("\n").find((line) => /^#\s/.test(line));
     return (
       <div>
+        {title && <Markdown>{title}</Markdown>}
         {oneShot}
-        <DocBody content={content} onRewrite={onRewrite} />
       </div>
     );
   }
 
+  if (!parsed) return <DocBody content={content} onRewrite={onRewrite} />;
+
   const total = parsed.steps.length;
   const doneCount = parsed.steps.filter((s) => checked.includes(s.number)).length;
-  const introTitle = parsed.intro
-    .split("\n")
-    .filter((line) => /^#\s/.test(line))
-    .join("\n");
   return (
     <div>
-      {oneShot ? (
-        <>
-          {introTitle && <Markdown>{introTitle}</Markdown>}
-          {oneShot}
-          <p className="mono-label mt-12 flex items-center gap-3.5 text-[10px] text-ink-4 after:h-px after:flex-1 after:bg-border">
-            참고 · AI가 따라갈 단계 {total}개
-          </p>
-        </>
-      ) : (
-        parsed.intro && <Markdown className="[&_blockquote]:border-l-0 [&_blockquote]:pl-0">{parsed.intro}</Markdown>
-      )}
+      {parsed.intro && <Markdown className="[&_blockquote]:border-l-0 [&_blockquote]:pl-0">{parsed.intro}</Markdown>}
       <div className="mt-6 flex items-center gap-[18px]">
         <span className="mono-label shrink-0 text-muted-foreground">
           진행 {doneCount} / {total}

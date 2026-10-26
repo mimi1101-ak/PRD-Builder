@@ -138,6 +138,13 @@ export const ONE_SHOT_PROMPT = `docs/PRD.md, docs/TASKS.md, CLAUDE.md를 읽어.
   5. 직접 확인할 것: 어떤 화면에서 무엇을 누르면 어떤 결과가 나와야 하는지
   6. 막힌 것과 남은 에러`;
 
+// 원샷 모드 아래 "이렇게 넣으세요" 가이드의 짧은 프롬프트. 사용자가 준 원문에서 말투만 다듬었다.
+export const ONE_SHOT_SHORT_PROMPT = `docs/PRD.md 파일을 보고 Supabase MCP로 DB를 만든 다음, 앱을 완성해 줘.
+오류가 있으면 스스로 검토해서 고치면서 진행하고, 문서를 기준으로 만들어 줘.`;
+
+// Supabase 가 안내하는 MCP 서버 주소 (OAuth 로그인으로 연결)
+export const SUPABASE_MCP_URL = "https://mcp.supabase.com/mcp";
+
 export const TOOLS = [
   { value: "claude_code", label: "클로드 코드" },
   { value: "cursor", label: "커서" },

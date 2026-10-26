@@ -1,6 +1,13 @@
 import { Button } from "@/components/ui/button";
-import { PromptBox } from "@/components/results/doc-body";
-import { ONE_SHOT_PROMPT, toolName, toolStopHint } from "@/lib/domain";
+import { CopyButton, PromptBox } from "@/components/results/doc-body";
+import {
+  ONE_SHOT_PROMPT,
+  ONE_SHOT_SHORT_PROMPT,
+  SUPABASE_MCP_URL,
+  toolName,
+  toolStopHint,
+} from "@/lib/domain";
+import { cn } from "@/lib/utils";
 
 const FOLDER_TREE = `내-프로젝트/
 ├── CLAUDE.md
@@ -46,7 +53,7 @@ export function OneShotCard({ tool, onPickStep }: { tool: string; onPickStep: ()
     </>,
     <>
       끝나면 &ldquo;키 필요&rdquo; 목록대로 키를 <code className="rounded bg-muted px-1.5 py-px font-mono text-[0.86em] text-foreground">.env.local</code>에
-      넣고 아래 단계별 &ldquo;완료 확인&rdquo;으로 직접 눌러 보세요.
+      넣고 단계별 모드의 &ldquo;완료 확인&rdquo;으로 직접 눌러 보세요.
     </>,
   ];
 
@@ -91,6 +98,131 @@ export function OneShotCard({ tool, onPickStep }: { tool: string; onPickStep: ()
           </li>
         ))}
       </ol>
+    </section>
+  );
+}
+
+const inlineCode = "rounded bg-muted px-1.5 py-px font-mono text-[0.86em] text-foreground";
+
+// 터미널 명령·설정 파일처럼 그대로 붙여 넣을 글 (밝은 상자 + 복사)
+function CodeBlock({ code }: { code: string }) {
+  return (
+    <div className="relative mt-2.5">
+      <pre className="whitespace-pre-wrap break-words rounded-xl border bg-muted py-3.5 pl-[18px] pr-20 font-mono text-[12.5px] leading-[1.85] text-ink-2">
+        {code}
+      </pre>
+      <CopyButton text={code} size="xs" className="absolute right-2 top-2 bg-background" />
+    </div>
+  );
+}
+
+// 도구마다 MCP 를 붙이는 곳이 달라서 2번 안내만 도구에 맞춘다
+function mcpSteps(tool: string): React.ReactNode[] {
+  if (tool === "cursor") {
+    return [
+      <>
+        프로젝트 폴더에 <code className={inlineCode}>.cursor/mcp.json</code> 파일을 만들고 아래 내용을 넣어요.
+        <CodeBlock code={JSON.stringify({ mcpServers: { supabase: { url: SUPABASE_MCP_URL } } }, null, 2)} />
+      </>,
+      <>커서 설정 &gt; Tools &amp; MCP에 supabase가 보이면 안내에 따라 브라우저에서 Supabase에 로그인해요.</>,
+      <>1번에서 만든 조직을 고르고 허용하면 연결이 끝나요.</>,
+    ];
+  }
+  if (tool === "other") {
+    return [
+      <>
+        쓰는 도구의 MCP 설정에 아래 주소를 추가해요.
+        <CodeBlock code={SUPABASE_MCP_URL} />
+      </>,
+      <>브라우저에 로그인 창이 뜨면 Supabase에 로그인해요.</>,
+      <>1번에서 만든 조직을 고르고 허용하면 연결이 끝나요.</>,
+    ];
+  }
+  return [
+    <>
+      받은 세 파일을 넣은 폴더에서 터미널을 열고 아래 명령을 실행해요.
+      <CodeBlock code={`claude mcp add --scope project --transport http supabase "${SUPABASE_MCP_URL}"`} />
+    </>,
+    <>
+      <code className={inlineCode}>claude</code>로 클로드 코드를 켜고 <code className={inlineCode}>/mcp</code>를
+      입력해요. supabase를 고르고 Authenticate를 누르면 브라우저가 열려요.
+    </>,
+    <>Supabase에 로그인한 뒤 1번에서 만든 조직을 고르고 허용하면 연결이 끝나요.</>,
+  ];
+}
+
+// 원샷 모드: 단계 카드 대신 보여 주는 "이렇게 넣으세요" 가이드. 계정 → MCP 연결 → 짧은 프롬프트 순서.
+export function OneShotGuide({ tool }: { tool: string }) {
+  const name = toolName(tool);
+  const guide: { title: string; items: React.ReactNode[] }[] = [
+    {
+      title: "Supabase 계정 만들기",
+      items: [
+        <>
+          <a href="https://supabase.com" target="_blank" rel="noreferrer" className="underline underline-offset-4">
+            supabase.com
+          </a>
+          에서 Start your project를 누르고 GitHub나 이메일로 가입해요.
+        </>,
+        <>조직(Organization)을 만들라고 나오면 이름은 아무거나 쓰고 플랜은 Free를 골라요.</>,
+        <>프로젝트는 미리 만들지 않아도 돼요. AI가 MCP로 만들어요.</>,
+      ],
+    },
+    {
+      title: `${name}에 Supabase MCP 연결하기`,
+      items: mcpSteps(tool),
+    },
+    {
+      title: "프롬프트 넣기",
+      items: [
+        <>
+          {name}에 아래 프롬프트를 붙여 넣어요.
+          <PromptBox text={ONE_SHOT_SHORT_PROMPT} fullHeight />
+        </>,
+      ],
+    },
+  ];
+
+  return (
+    <section aria-labelledby="one-shot-guide-title" className="mt-12">
+      <p className="mono-label flex items-center gap-3.5 text-[10px] text-ink-4 after:h-px after:flex-1 after:bg-border">
+        Guide
+      </p>
+      <h2
+        id="one-shot-guide-title"
+        className="mt-6 font-display text-[26px] font-light leading-[1.3] tracking-[-0.03em]"
+      >
+        이렇게 넣으세요
+      </h2>
+      <p className="mt-2 text-[14.5px] leading-[1.75] text-ink-2">
+        Supabase 계정을 만들고 {name}에 MCP(AI가 Supabase를 직접 다루게 해 주는 연결)를 붙인 뒤, 프롬프트를 넣으면 돼요.
+      </p>
+      <div className="mt-7">
+        {guide.map((g, i) => (
+          <div key={g.title} className="grid gap-2.5 border-t py-9 sm:grid-cols-[96px_minmax(0,1fr)] sm:gap-5">
+            <div className="font-display text-[44px] font-extralight leading-[0.85] tracking-[-0.05em] sm:text-[60px]">
+              {String(i + 1).padStart(2, "0")}
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-[19px] font-semibold leading-[1.45] tracking-[-0.02em]">{g.title}</h3>
+              <ul className="mt-2.5 space-y-2">
+                {g.items.map((item, j) => (
+                  <li
+                    key={j}
+                    className={cn(
+                      "text-[14.5px] leading-[1.75] text-ink-2",
+                      g.items.length > 1 &&
+                        "relative pl-4 before:absolute before:left-0 before:top-[0.8em] before:size-1 before:rounded-full before:bg-ink-4",
+                    )}
+                  >
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
