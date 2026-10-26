@@ -110,18 +110,24 @@ type InterviewUpdate = z.infer<typeof UpdateSchema>;
 
 type TurnRule = "must_ask" | "keep_asking" | "may_finish" | "must_finish" | "final_check";
 
-// 아직 done 이 아닌 영역
-function openAreas(coverage: Coverage) {
-  return AREA_KEYS.filter((k) => coverage[k] !== "done");
+// 한 번도 이야기하지 않은 영역 (상태가 empty 이고 요약도 비어 있음)
+function untouchedAreas(coverage: Coverage, summary: IdeaSummary) {
+  return AREA_KEYS.filter((k) => coverage[k] === "empty" && !summary[k].trim());
 }
 
-export function turnRuleFor(status: ProjectStatus, questionCount: number, coverage: Coverage): TurnRule {
+export function turnRuleFor(
+  status: ProjectStatus,
+  questionCount: number,
+  coverage: Coverage,
+  summary: IdeaSummary,
+): TurnRule {
   if (status === "final_check" || status === "done") return "final_check";
   if (questionCount >= MAX_QUESTIONS) return "must_finish";
   if (questionCount < MIN_QUESTIONS) return "must_ask";
-  // 덜 찬 영역이 둘 이상이면 마칠 수 없다. 모델에게 맡기면 남은 영역을 한꺼번에 done 으로 바꾸고 일찍 끝내곤 한다.
+  // 한 번도 이야기하지 않은 영역이 둘 이상이면 마칠 수 없다. 모델에게 맡기면 묻지 않은 영역을 추측으로 채우고
+  // 일찍 끝내곤 한다. 일부라도 들은 영역은 막지 않는다(막으면 물을 게 없는데 마무리 문구만 쓰는 턴이 생긴다).
   // 하나까지는 허용한다: 방금 받은 답으로 마지막 영역이 채워질 수 있다.
-  if (openAreas(coverage).length > 1) return "keep_asking";
+  if (untouchedAreas(coverage, summary).length > 1) return "keep_asking";
   return "may_finish";
 }
 
@@ -144,9 +150,11 @@ function buildSystem(input: TurnInput, rule: TurnRule): Anthropic.TextBlockParam
     experience: experienceLabel(input.experience),
     min_questions: MIN_QUESTIONS,
     max_questions: MAX_QUESTIONS,
-    open_areas: openAreas(input.coverage)
-      .map((k) => AREA_LABELS[k])
-      .join(", "),
+    remaining: Math.max(0, MAX_QUESTIONS - input.questionCount),
+    empty_areas:
+      untouchedAreas(input.coverage, input.summary)
+        .map((k) => AREA_LABELS[k])
+        .join(", ") || "없음",
   };
   let ruleText = fill(promptSection("interview.md", `rule_${rule}`), vars);
   if (rule === "may_finish" || rule === "must_finish") {
@@ -213,7 +221,7 @@ export async function runInterviewTurn(
   handlers: TurnHandlers,
   signal?: AbortSignal,
 ): Promise<TurnResult> {
-  const rule = turnRuleFor(input.status, input.questionCount, input.coverage);
+  const rule = turnRuleFor(input.status, input.questionCount, input.coverage, input.summary);
   const system = buildSystem(input, rule);
   const messages = toApiMessages(input.history);
 
