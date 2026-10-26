@@ -245,7 +245,8 @@ export async function runInterviewTurn(
   stream.on("streamEvent", (event) => {
     if (event.type !== "content_block_delta" || event.delta.type !== "input_json_delta") return;
     json += event.delta.partial_json;
-    const message = partialStringField(json, "message");
+    // 끝에 줄표가 될지 모르는 부분(" -")은 다음 글자가 올 때까지 기다렸다가 줄표를 바꾼 뒤 보낸다
+    const message = replaceDashes(partialStringField(json, "message").replace(/\s*[-–—]?\s*$/, ""));
     if (message.length > shown.length && message.startsWith(shown)) {
       handlers.onText(message.slice(shown.length));
       shown = message;
@@ -269,10 +270,18 @@ export async function runInterviewTurn(
   const update = final.stop_reason === "max_tokens" ? null : findUpdate(final.content);
   if (!update) console.error("[interview] update_interview 입력을 읽지 못함", final.stop_reason);
 
-  const text = stripTrailingList((update?.message ?? shown).trim());
+  const text = stripTrailingList(update ? replaceDashes(update.message.trim()) : shown.trim());
   if (!text) throw new AiError("AI 응답이 비어 있어요. 다시 시도해 주세요.");
 
   return mergeResult(input, rule, text, update);
+}
+
+// 프롬프트로 막아도 가끔 나오는 줄표(—, –)나 줄표 대신 쓴 " - " 를 문장부호로 바꾼다.
+// 한글 사이에 있을 때만 바꾸고, 앞말이 질문 어미면 물음표, 아니면 쉼표로 잇는다.
+function replaceDashes(text: string): string {
+  return text.replace(/([가-힣]+)(?:\s*[–—]\s*|\s+-\s+)(?=[가-힣])/g, (_, word: string) =>
+    /(가요|나요|까요|세요)$/.test(word) ? `${word}? ` : `${word}, `,
+  );
 }
 
 // options 배열과 phase 가 다 들어왔으면(요약보다 먼저 온다) 마지막에 저장될 것과 같은 버튼 목록을 돌려준다.

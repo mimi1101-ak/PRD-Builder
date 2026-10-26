@@ -1,5 +1,6 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
+import { BUSINESS } from "@/lib/business";
 import { ConfigError } from "@/lib/env";
 
 let client: Anthropic | null = null;
@@ -35,6 +36,13 @@ export class AiError extends Error {
 export function describeAiError(err: unknown): { message: string; retryable: boolean } {
   if (err instanceof ConfigError) return { message: err.message, retryable: false };
   if (err instanceof AiError) return { message: err.message, retryable: err.retryable };
+  // API 크레딧이 바닥나면 400(invalid_request_error)으로 온다. 사용자가 고칠 수 없는 서비스 쪽 문제라 따로 알린다.
+  if (err instanceof Anthropic.APIError && /credit balance/i.test(err.message)) {
+    return {
+      message: `서비스 쪽 문제로 지금은 AI를 쓸 수 없어요. 잠시 후 다시 시도해 주시고, 계속되면 ${BUSINESS.email}로 알려 주세요.`,
+      retryable: false,
+    };
+  }
   if (err instanceof Anthropic.AuthenticationError) {
     return { message: "AI 키 설정에 문제가 있어요. 관리자에게 알려 주세요.", retryable: false };
   }
