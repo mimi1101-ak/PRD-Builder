@@ -20,7 +20,8 @@ import {
   type ProjectStatus,
 } from "@/lib/domain";
 
-// ── 도구 정의: 메시지(텍스트)와 함께 받을 구조화 데이터 (PRD 7장 "대화 응답 만들기")
+// ── 도구 정의: 사용자에게 보여줄 메시지와 구조화 데이터를 도구 하나로 받는다 (PRD 7장 "대화 응답 만들기")
+// 도구 호출을 강제해 상태가 빠지는 일을 막는다. message 를 맨 앞, options 를 그다음에 두어 글이 먼저 흘러나오게 한다.
 
 const areaStringProps = Object.fromEntries(AREA_KEYS.map((k) => [k, { type: "string", description: AREA_LABELS[k] }]));
 const areaStatusProps = Object.fromEntries(
@@ -30,10 +31,24 @@ const areaStatusProps = Object.fromEntries(
 const UPDATE_TOOL_BASE = {
   name: "update_interview",
   description:
-    "사용자에게 보여줄 메시지를 다 쓴 뒤 정확히 한 번 호출합니다. 지금까지 정리된 아이디어 요약(누적), 9개 영역 상태, 질문 아래 보여줄 추천 답변, 다음 단계를 저장합니다.",
+    "사용자에게 보여줄 메시지와 정리된 상태(추천 답변, 다음 단계, 9개 영역 상태, 누적 요약)를 한 번에 저장합니다. message 를 가장 먼저 씁니다.",
   input_schema: {
     type: "object" as const,
     properties: {
+      message: { type: "string", description: "사용자에게 보여줄 메시지 (답 받기 문단, 빈 줄, 질문 문단)" },
+      options: {
+        type: "array",
+        items: { type: "string" },
+        maxItems: 3,
+        description: "질문 아래 버튼으로 보여줄 추천 답변 (각 25자 이내)",
+      },
+      phase: { type: "string", enum: ["interview", "final_check"] },
+      coverage: {
+        type: "object",
+        description: "9개 영역별 상태",
+        properties: areaStatusProps,
+        required: [...AREA_KEYS],
+      },
       summary: {
         type: "object",
         description: "지금까지의 대화 전체를 영역별로 누적 정리한 요약",
@@ -49,21 +64,8 @@ const UPDATE_TOOL_BASE = {
         },
         required: ["title", "one_liner", ...AREA_KEYS, "final_changes"],
       },
-      coverage: {
-        type: "object",
-        description: "9개 영역별 상태",
-        properties: areaStatusProps,
-        required: [...AREA_KEYS],
-      },
-      options: {
-        type: "array",
-        items: { type: "string" },
-        maxItems: 3,
-        description: "질문 아래 버튼으로 보여줄 추천 답변 (각 25자 이내)",
-      },
-      phase: { type: "string", enum: ["interview", "final_check"] },
     },
-    required: ["summary", "coverage", "options", "phase"],
+    required: ["message", "options", "phase", "coverage", "summary"],
   },
 } satisfies Anthropic.Tool;
 
@@ -72,6 +74,7 @@ const UPDATE_TOOL_STREAMING: Anthropic.Tool = { ...UPDATE_TOOL_BASE, eager_input
 
 const coverageEnum = z.enum(["empty", "partial", "done"]);
 const UpdateSchema = z.object({
+  message: z.string(),
   summary: z.object({
     title: z.string(),
     one_liner: z.string(),
@@ -84,7 +87,8 @@ const UpdateSchema = z.object({
     payment: z.string(),
     integrations: z.string(),
     design: z.string(),
-    final_changes: z.array(z.string()),
+    // 인터뷰 중에는 모델이 이 칸을 아예 빼고 보내는 일이 잦다 (eager_input_streaming 은 서버가 검사하지 않음)
+    final_changes: z.array(z.string()).default([]),
   }),
   coverage: z.object({
     target_users: coverageEnum,
@@ -202,61 +206,59 @@ export async function runInterviewTurn(
       system,
       messages,
       tools: [UPDATE_TOOL_STREAMING],
-      tool_choice: { type: "auto" },
+      // 도구 호출 강제: claude-haiku-4-5 는 된다. Opus 5.5·Sonnet 5.5·Fable 5.1 은 tool_choice any/tool 을 400 으로
+      // 거절하므로, 대화 모델을 그쪽으로 바꾸면 이 방식도 함께 바꿔야 한다.
+      tool_choice: { type: "tool", name: UPDATE_TOOL_BASE.name },
     },
     { signal },
   );
-  stream.on("text", (delta) => onText(delta));
+  // 도구 입력(JSON) 조각에서 message 를 꺼내, 새로 늘어난 글자만 화면으로 보낸다.
+  let json = "";
+  let shown = "";
+  stream.on("streamEvent", (event) => {
+    if (event.type !== "content_block_delta" || event.delta.type !== "input_json_delta") return;
+    json += event.delta.partial_json;
+    const message = partialStringField(json, "message");
+    if (message.length > shown.length && message.startsWith(shown)) {
+      onText(message.slice(shown.length));
+      shown = message;
+    }
+  });
   const final = await stream.finalMessage();
 
   if (final.stop_reason === "refusal") {
     throw new AiError("이 내용으로는 답변을 만들 수 없어요. 표현을 바꿔 다시 말씀해 주세요.", false);
   }
 
-  const text = stripTrailingList(
-    final.content
-      .filter((b): b is Anthropic.TextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("")
-      .trim(),
-  );
-  if (!text) throw new AiError("AI 응답이 비어 있어요. 다시 시도해 주세요.");
+  // 잘린 응답(max_tokens)의 도구 입력은 믿지 않는다. 상태를 못 받아도 흘려보낸 메시지로 대화는 이어 간다.
+  const update = final.stop_reason === "max_tokens" ? null : findUpdate(final.content);
+  if (!update) console.error("[interview] update_interview 입력을 읽지 못함", final.stop_reason);
 
-  // 잘린 응답(max_tokens)의 도구 입력은 믿지 않는다.
-  let update = final.stop_reason === "max_tokens" ? null : findUpdate(final.content);
-  if (!update) update = await extractUpdate(system, messages, text, signal);
+  const text = stripTrailingList((update?.message ?? shown).trim());
+  if (!text) throw new AiError("AI 응답이 비어 있어요. 다시 시도해 주세요.");
 
   return mergeResult(input, rule, text, update);
 }
 
-// 모델이 도구를 빠뜨렸거나 형식이 틀렸을 때: 방금 쓴 메시지를 기준으로 상태만 다시 받는다.
-async function extractUpdate(
-  system: Anthropic.TextBlockParam[],
-  messages: Anthropic.MessageParam[],
-  text: string,
-  signal?: AbortSignal,
-): Promise<InterviewUpdate | null> {
+// 스트리밍 중인 JSON 조각에서 문자열 필드 하나를 지금까지 온 만큼 꺼낸다 (아직 안 왔으면 "").
+function partialStringField(json: string, key: string): string {
+  const start = json.match(new RegExp(`"${key}"\\s*:\\s*"`));
+  if (!start || start.index === undefined) return "";
+  let body = json.slice(start.index + start[0].length);
+  for (let i = 0; i < body.length; i++) {
+    if (body[i] === "\\") i++;
+    else if (body[i] === '"') {
+      body = body.slice(0, i);
+      break;
+    }
+  }
+  // 끝에 덜 온 이스케이프(\ 또는 \u12)는 다음 조각을 기다린다
+  body = body.replace(/\\u[0-9a-fA-F]{0,3}$/, "");
+  if ((body.match(/\\+$/)?.[0].length ?? 0) % 2 === 1) body = body.slice(0, -1);
   try {
-    const res = await anthropic().messages.create(
-      {
-        model: CHAT_MODEL,
-        max_tokens: 2048,
-        system,
-        messages: [
-          ...messages,
-          { role: "assistant", content: text },
-          { role: "user", content: promptSection("interview.md", "extract") },
-        ],
-        tools: [UPDATE_TOOL_BASE],
-        tool_choice: { type: "auto" },
-      },
-      { signal },
-    );
-    return res.stop_reason === "max_tokens" ? null : findUpdate(res.content);
-  } catch (err) {
-    if (signal?.aborted) throw err;
-    console.error("[interview] extract failed", err);
-    return null;
+    return JSON.parse(`"${body}"`) as string;
+  } catch {
+    return "";
   }
 }
 
