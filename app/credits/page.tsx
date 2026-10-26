@@ -89,7 +89,8 @@ export default async function CreditsPage(props: PageProps<"/credits">) {
             <b className="text-foreground">무료</b>: MOMO와의 인터뷰는 무제한이에요. 만든 PRD는 언제든 다시 보고 복사할 수 있어요.
           </p>
           <p className="mt-1">
-            결제는 토스페이먼츠로 안전하게 처리돼요. 현재 테스트 모드에서는 실제 돈이 나가지 않아요.
+            결제는 토스페이먼츠로 안전하게 처리돼요.
+            {process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY?.startsWith("test_") && " 현재 테스트 모드에서는 실제 돈이 나가지 않아요."}
           </p>
           <p className="mt-1">
             쓰지 않은 크레딧은 결제 후 7일 이내라면 전액 환불돼요. 이미 쓴 크레딧은 환불되지 않아요.{" "}

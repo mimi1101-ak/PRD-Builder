@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { getViewer, safeNextPath } from "@/lib/access";
 import { LoginButtons } from "@/components/login-buttons";
 import { Logo } from "@/components/logo";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export const metadata = { title: "로그인" };
 
@@ -10,6 +12,7 @@ export default async function LoginPage(props: PageProps<"/login">) {
   const searchParams = await props.searchParams;
   const next = safeNextPath(typeof searchParams.next === "string" ? searchParams.next : null, "/projects");
   const error = typeof searchParams.error === "string" ? searchParams.error : null;
+  const mode = typeof searchParams.mode === "string" ? searchParams.mode : null;
 
   const viewer = await getViewer();
   if (viewer.userId) redirect(next);
@@ -27,6 +30,27 @@ export default async function LoginPage(props: PageProps<"/login">) {
         </div>
         {error && <p className="mb-4 rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
         <LoginButtons next={next} />
+        {/* 회사가 발급한 계정(결제 심사용 등)만 쓰는 이메일 로그인. 가입은 받지 않는다. */}
+        <details open={mode === "email"} className="group mt-4 text-sm">
+          <summary className="cursor-pointer list-none text-center text-xs text-muted-foreground hover:text-foreground">
+            이메일 계정으로 로그인
+          </summary>
+          <form action="/auth/password" method="post" className="mt-3 grid gap-2">
+            <input type="hidden" name="next" value={next} />
+            <Input type="email" name="email" placeholder="이메일" autoComplete="username" required className="h-11" />
+            <Input
+              type="password"
+              name="password"
+              placeholder="비밀번호"
+              autoComplete="current-password"
+              required
+              className="h-11"
+            />
+            <Button type="submit" size="lg" className="h-11 w-full">
+              로그인
+            </Button>
+          </form>
+        </details>
         <p className="mt-4 text-center text-xs text-muted-foreground">
           계속하면{" "}
           <Link href="/terms" className="underline">

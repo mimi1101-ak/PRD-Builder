@@ -25,6 +25,9 @@ export async function SiteHeader() {
           <span>dot.PRD</span>
         </Link>
         <nav className="flex items-center gap-0.5 text-[13.5px] text-ink-2">
+          <Link href="/pricing" className={navLink}>
+            요금
+          </Link>
           <Link href="/projects" className={navLink}>
             내 프로젝트
           </Link>

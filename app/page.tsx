@@ -1,5 +1,6 @@
 import { BlackHole } from "@/components/black-hole";
 import { IdeaComposer } from "@/components/home/idea-composer";
+import { ResultPreviews } from "@/components/home/result-previews";
 import { SiteFooter } from "@/components/site-footer";
 
 const STEPS = [
@@ -67,6 +68,8 @@ export default function HomePage() {
               </li>
             ))}
           </ol>
+
+          <ResultPreviews />
         </div>
       </main>
       <SiteFooter />

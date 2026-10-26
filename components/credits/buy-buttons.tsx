@@ -60,8 +60,7 @@ export function BuyButtons({ next }: { next: string }) {
     <div>
       {!clientKey && (
         <p className="mb-5 rounded-2xl border border-dashed border-line-strong px-4 py-3 text-sm text-ink-2">
-          결제를 준비하고 있어요. 지금은 크레딧을 구매할 수 없어요. (운영자: 토스페이먼츠 키를 .env.local 에 넣으면
-          결제가 켜져요)
+          결제를 준비하고 있어요. 지금은 크레딧을 구매할 수 없어요.
         </p>
       )}
       <div className="grid gap-4 sm:grid-cols-2">
