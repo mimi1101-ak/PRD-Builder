@@ -83,15 +83,13 @@ export default async function PricingPage() {
                   <div>
                     <p className="font-medium">
                       dot.PRD {p.title}
-                      <span className="ml-2 text-sm font-normal text-muted-foreground">
-                        프로젝트 {p.credits}개 잠금 해제
-                      </span>
+                      <span className="ml-2 text-sm font-normal text-muted-foreground">크레딧 {p.credits}건</span>
                     </p>
                     <p className="mt-1 font-display text-4xl font-extralight tracking-[-0.04em]">
                       {p.amount.toLocaleString()}원
                     </p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      크레딧 {p.credits}건 · 건당 {Math.round(p.amount / p.credits).toLocaleString()}원
+                      건당 {Math.round(p.amount / p.credits).toLocaleString()}원
                     </p>
                   </div>
                   <Button asChild variant={best ? "default" : "outline"} size="lg" className="w-full sm:w-36">
