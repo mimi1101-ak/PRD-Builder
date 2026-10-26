@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/site-footer";
 import { getViewer } from "@/lib/access";
 import { BUSINESS } from "@/lib/business";
-import { PRODUCTS, REWRITES_PER_CREDIT, type ProductKey } from "@/lib/domain";
+import { BEST_PRODUCT, PRODUCTS, REWRITES_PER_CREDIT, type ProductKey } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "요금 안내" };
@@ -58,35 +58,43 @@ export default async function PricingPage() {
           인터뷰와 PRD 생성은 무료예요. 작업 단계(TASKS.md)와 CLAUDE.md를 열 때 크레딧을 써요.
         </p>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+        {/* 상품마다 가로 한 줄: 왼쪽 이미지, 오른쪽 이름·가격·구매 */}
+        <div className="mt-8 space-y-3">
           {(Object.keys(PRODUCTS) as ProductKey[]).map((key) => {
             const p = PRODUCTS[key];
-            const best = key === "credit_5";
+            const best = key === BEST_PRODUCT;
             return (
-              <div key={key} className={cn("overflow-hidden rounded-[20px] border", best && "border-foreground")}>
+              <div
+                key={key}
+                className={cn(
+                  "flex flex-col overflow-hidden rounded-[20px] border sm:flex-row",
+                  best && "border-foreground",
+                )}
+              >
                 <Image
                   src={IMAGES[key]}
                   alt={`${p.name} 상품 이미지`}
                   width={800}
                   height={600}
-                  className="aspect-[4/3] w-full object-cover"
+                  className="aspect-[4/3] w-full shrink-0 object-cover sm:w-[200px]"
                   unoptimized
                 />
-                <div className="p-6">
-                  <p className="font-medium">dot.PRD {p.title}</p>
-                  <p className="mt-2 font-display text-4xl font-extralight tracking-[-0.04em]">
-                    {p.amount.toLocaleString()}원
-                  </p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    크레딧 {p.credits}건 · 건당 {Math.round(p.amount / p.credits).toLocaleString()}원
-                  </p>
-                  <ul className="mt-4 space-y-1 text-sm text-ink-2">
-                    <li>프로젝트 {p.credits}개 잠금 해제</li>
-                    {INCLUDED.map((item) => (
-                      <li key={item}>· {item}</li>
-                    ))}
-                  </ul>
-                  <Button asChild variant={best ? "default" : "outline"} size="lg" className="mt-6 w-full">
+                <div className="flex flex-1 flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+                  <div>
+                    <p className="font-medium">
+                      dot.PRD {p.title}
+                      <span className="ml-2 text-sm font-normal text-muted-foreground">
+                        프로젝트 {p.credits}개 잠금 해제
+                      </span>
+                    </p>
+                    <p className="mt-1 font-display text-4xl font-extralight tracking-[-0.04em]">
+                      {p.amount.toLocaleString()}원
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      크레딧 {p.credits}건 · 건당 {Math.round(p.amount / p.credits).toLocaleString()}원
+                    </p>
+                  </div>
+                  <Button asChild variant={best ? "default" : "outline"} size="lg" className="w-full sm:w-36">
                     <Link href={buyHref}>구매하기</Link>
                   </Button>
                 </div>
@@ -94,6 +102,9 @@ export default async function PricingPage() {
             );
           })}
         </div>
+        <p className="mt-4 text-sm leading-6 text-ink-2">
+          <span className="text-muted-foreground">모든 상품 · 프로젝트마다</span> {INCLUDED.join(" · ")}
+        </p>
 
         <h2 className="mb-4 mt-12 font-display text-[26px] font-light tracking-[-0.03em]">상품 정보</h2>
         <dl className="border-t text-sm">

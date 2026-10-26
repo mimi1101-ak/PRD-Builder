@@ -207,6 +207,8 @@ export const PRODUCTS = {
   credit_5: { credits: 5, amount: 14900, title: "Burst", name: "dot.PRD Burst · 크레딧 5건" },
 } as const;
 export type ProductKey = keyof typeof PRODUCTS;
+// 요금 안내·구매 화면에서 강조하는 상품
+export const BEST_PRODUCT: ProductKey = "credit_3";
 
 export function emptyCoverage(): Coverage {
   return Object.fromEntries(AREA_KEYS.map((k) => [k, "empty"])) as Coverage;

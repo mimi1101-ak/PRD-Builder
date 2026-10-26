@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { loadTossPayments } from "@tosspayments/tosspayments-sdk";
 import { Button } from "@/components/ui/button";
-import { PRODUCTS, type ProductKey } from "@/lib/domain";
+import { BEST_PRODUCT, PRODUCTS, type ProductKey } from "@/lib/domain";
 import { readJsonError } from "@/lib/ndjson";
 import { cn } from "@/lib/utils";
 
@@ -66,7 +66,7 @@ export function BuyButtons({ next }: { next: string }) {
       <div className="grid gap-4 sm:grid-cols-3">
         {(Object.keys(PRODUCTS) as ProductKey[]).map((key) => {
           const p = PRODUCTS[key];
-          const best = key === "credit_5";
+          const best = key === BEST_PRODUCT;
           return (
             <div key={key} className={cn("relative rounded-[20px] border p-6", best && "border-foreground")}>
               {best && (
