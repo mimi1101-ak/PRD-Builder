@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/site-footer";
 import { getViewer } from "@/lib/access";
+import { BUSINESS } from "@/lib/business";
 import { PRODUCTS, REWRITES_PER_CREDIT, type ProductKey } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +13,7 @@ export const metadata = { title: "요금 안내" };
 // 금액은 lib/domain.ts 의 PRODUCTS 를 그대로 쓴다.
 const IMAGES: Record<ProductKey, string> = {
   credit_1: "/products/credit-1.svg",
+  credit_3: "/products/credit-3.svg",
   credit_5: "/products/credit-5.svg",
 };
 
@@ -22,15 +24,25 @@ const INCLUDED = [
   `섹션 다시 쓰기 ${REWRITES_PER_CREDIT}회`,
 ];
 
-const DETAILS: { label: string; value: string }[] = [
-  { label: "상품 형태", value: "온라인 디지털 콘텐츠 이용권(크레딧). 배송 없음" },
-  { label: "제공 내용", value: "크레딧 1건으로 프로젝트 1개를 잠금 해제해요. " + INCLUDED.join(", ") },
-  { label: "제공 시점", value: "결제 승인 즉시 계정에 크레딧이 지급돼요" },
+// 한 줄씩 나눠 보여 준다
+const DETAILS: { label: string; lines: string[] }[] = [
+  { label: "상품 형태", lines: ["온라인 이용권(크레딧)", "배송 없음"] },
+  {
+    label: "제공 내용",
+    lines: [
+      "크레딧 1건으로 프로젝트 1개 잠금 해제",
+      "작업 단계 문서 보기 (TASKS.md)",
+      "AI 코딩 도구용 안내서 보기 (CLAUDE.md)",
+      "문서 3개 한 번에 내려받기 (PRD.md · TASKS.md · CLAUDE.md, zip 파일)",
+      `섹션 다시 쓰기 ${REWRITES_PER_CREDIT}회`,
+    ],
+  },
+  { label: "제공 시점", lines: ["결제가 끝나면 바로 계정에 크레딧 지급"] },
   {
     label: "서비스 제공 기간",
-    value: "크레딧은 따로 정한 사용 기한이 없어요. 잠금 해제한 프로젝트는 서비스가 운영되는 동안 계속 볼 수 있어요",
+    lines: ["크레딧 사용 기한 없음", "잠금 해제한 프로젝트는 서비스 운영 기간 내내 계속 보기 가능"],
   },
-  { label: "결제 수단", value: "신용·체크카드 (토스페이먼츠)" },
+  { label: "결제 수단", lines: ["신용·체크카드 (토스페이먼츠)"] },
 ];
 
 export default async function PricingPage() {
@@ -46,7 +58,7 @@ export default async function PricingPage() {
           인터뷰와 PRD 생성은 무료예요. 작업 단계(TASKS.md)와 CLAUDE.md를 열 때 크레딧을 써요.
         </p>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {(Object.keys(PRODUCTS) as ProductKey[]).map((key) => {
             const p = PRODUCTS[key];
             const best = key === "credit_5";
@@ -61,7 +73,7 @@ export default async function PricingPage() {
                   unoptimized
                 />
                 <div className="p-6">
-                  <p className="font-medium">{p.name}</p>
+                  <p className="font-medium">dot.PRD {p.title}</p>
                   <p className="mt-2 font-display text-4xl font-extralight tracking-[-0.04em]">
                     {p.amount.toLocaleString()}원
                   </p>
@@ -88,12 +100,16 @@ export default async function PricingPage() {
           {DETAILS.map((d) => (
             <div key={d.label} className="grid gap-1 border-b py-3.5 sm:grid-cols-[160px_1fr] sm:gap-4">
               <dt className="text-muted-foreground">{d.label}</dt>
-              <dd className="break-keep">{d.value}</dd>
+              <dd className="space-y-1 break-keep">
+                {d.lines.map((line) => (
+                  <p key={line}>{line}</p>
+                ))}
+              </dd>
             </div>
           ))}
         </dl>
 
-        <h2 className="mb-4 mt-12 font-display text-[26px] font-light tracking-[-0.03em]">무료로 쓸 수 있는 것</h2>
+        <h2 className="mb-4 mt-12 font-display text-[26px] font-light tracking-[-0.03em]">무료로 사용 가능한 기능</h2>
         <ul className="space-y-1 text-sm leading-6 text-ink-2">
           <li>· MOMO와의 아이디어 인터뷰 (횟수 제한 없음)</li>
           <li>· PRD.md 생성과 열람·복사</li>
@@ -101,9 +117,9 @@ export default async function PricingPage() {
 
         <h2 className="mb-4 mt-12 font-display text-[26px] font-light tracking-[-0.03em]">환불 정책</h2>
         <ul className="space-y-1 text-sm leading-6 text-ink-2">
-          <li>· 결제 후 7일 이내, 크레딧을 쓰지 않았다면 전액 환불해요.</li>
-          <li>· 5건 묶음에서 일부만 썼다면, 결제 금액에서 쓴 건수 × 3,900원을 뺀 금액을 환불해요.</li>
-          <li>· 7일이 지난 뒤에는 결제일로부터 1년 이내에 남은 크레딧을 10% 공제 후 환불해요.</li>
+          <li>· 환불은 결제 후 7일 이내에 이메일({BUSINESS.email})로 신청해 주세요. 7일이 지나면 환불되지 않아요.</li>
+          <li>· 크레딧을 쓰지 않았다면 전액 환불해요.</li>
+          <li>· 3건·5건 묶음에서 일부만 썼다면, 결제 금액에서 쓴 건수 × 3,900원을 뺀 금액을 환불해요.</li>
           <li>
             · 이미 쓴 크레딧(잠금 해제한 프로젝트)과 무료로 받은 크레딧은 환불되지 않아요. 서비스 오류로 이용하지 못했다면
             전액 돌려드려요.

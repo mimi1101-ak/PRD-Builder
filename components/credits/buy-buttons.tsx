@@ -63,7 +63,7 @@ export function BuyButtons({ next }: { next: string }) {
           결제를 준비하고 있어요. 지금은 크레딧을 구매할 수 없어요.
         </p>
       )}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         {(Object.keys(PRODUCTS) as ProductKey[]).map((key) => {
           const p = PRODUCTS[key];
           const best = key === "credit_5";
@@ -74,7 +74,7 @@ export function BuyButtons({ next }: { next: string }) {
                   건당 {Math.round(p.amount / p.credits).toLocaleString()}원
                 </span>
               )}
-              <p className="mono-label text-muted-foreground">크레딧 {p.credits}건</p>
+              <p className="mono-label text-muted-foreground">{p.title} · 크레딧 {p.credits}건</p>
               <p className="mt-3 font-display text-4xl font-extralight tracking-[-0.04em]">{p.amount.toLocaleString()}원</p>
               <p className="mt-2 text-sm text-muted-foreground">프로젝트 {p.credits}개의 작업 단계 + CLAUDE.md 열기</p>
               <Button

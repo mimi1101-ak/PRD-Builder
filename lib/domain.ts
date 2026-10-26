@@ -201,8 +201,10 @@ export function rewritesLeftLabel(left: number) {
 export const MAX_GRANT_CREDITS = 100;
 
 export const PRODUCTS = {
-  credit_1: { credits: 1, amount: 3900, name: "dot.PRD 크레딧 1건" },
-  credit_5: { credits: 5, amount: 14900, name: "dot.PRD 크레딧 5건" },
+  // title: 화면에 보이는 상품 이름, name: 결제창 주문명
+  credit_1: { credits: 1, amount: 3900, title: "Spark", name: "dot.PRD Spark · 크레딧 1건" },
+  credit_3: { credits: 3, amount: 9900, title: "Glow", name: "dot.PRD Glow · 크레딧 3건" },
+  credit_5: { credits: 5, amount: 14900, title: "Burst", name: "dot.PRD Burst · 크레딧 5건" },
 } as const;
 export type ProductKey = keyof typeof PRODUCTS;
 
