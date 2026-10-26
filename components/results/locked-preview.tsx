@@ -10,7 +10,7 @@ import { PRODUCTS, REWRITES_PER_CREDIT, type DocKind } from "@/lib/domain";
 const SAMPLE: Record<Exclude<DocKind, "prd">, string> = {
   tasks: `# 작업 단계
 
-> 한 단계씩 순서대로 클로드 코드에 붙여 넣고, 완료 확인을 한 뒤 다음 단계로 넘어가세요.
+> 한 단계씩 순서대로 클로드 코드에 붙여 넣고 완료 확인을 한 뒤 다음 단계로 넘어가세요.
 
 ## 1단계. 프로젝트 만들기와 규칙 파일
 - **목표:** 빈 폴더에서 프로젝트를 만들고 첫 화면을 띄운다

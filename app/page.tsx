@@ -5,7 +5,7 @@ import { SiteFooter } from "@/components/site-footer";
 
 const STEPS = [
   { no: "01 — 질문", title: "질문에 답하기", desc: "기획에 빠진 부분을 하나씩 물어봐요.\n잘 모르겠으면 추천 답변을 고르면 돼요." },
-  { no: "02 — 확인", title: "정리된 내용 확인하기", desc: "대상 사용자부터 디자인 톤까지 9가지 항목을 보고,\n고칠 부분만 말해주세요." },
+  { no: "02 — 확인", title: "정리된 내용 확인하기", desc: "대상 사용자부터 디자인 톤까지 9가지 항목을 보고\n고칠 부분만 말해주세요." },
   { no: "03 — 문서", title: "문서 세 개 받기", desc: "PRD.md · TASKS.md · CLAUDE.md를 복사하거나 zip으로 받아요." },
 ];
 
@@ -28,7 +28,7 @@ export default function HomePage() {
               </span>
             </p>
             <h1 className="display-title relative z-10 grid flex-1 grid-rows-[auto_1fr_auto] pt-3 text-[clamp(26px,7vw,92px)] min-[521px]:pt-[18px]">
-              <span className={`rise justify-self-start [animation-delay:80ms] ${glow}`}>아이디어 한 줄로 시작해서,</span>
+              <span className={`rise justify-self-start [animation-delay:80ms] ${glow}`}>아이디어 한 줄로 시작해서</span>
               <span className={`rise row-start-3 justify-self-end pb-1 text-right [animation-delay:180ms] ${glow}`}>
                 개발에 바로 쓰는 기획서까지.
               </span>

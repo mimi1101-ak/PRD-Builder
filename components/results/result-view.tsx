@@ -488,7 +488,7 @@ export function ResultView({
           <DialogHeader>
             <DialogTitle className="font-display text-2xl font-light tracking-[-0.03em]">크레딧 1건을 사용할까요?</DialogTitle>
             <DialogDescription>
-              이 프로젝트의 작업 단계와 CLAUDE.md를 만들고, zip 다운로드와 섹션 다시 쓰기 {REWRITES_PER_CREDIT}회를 쓸
+              이 프로젝트의 작업 단계와 CLAUDE.md를 만들고 zip 다운로드와 섹션 다시 쓰기 {REWRITES_PER_CREDIT}회를 쓸
               수 있어요. 한 번 연 프로젝트는 계속 볼 수 있어요.
             </DialogDescription>
           </DialogHeader>

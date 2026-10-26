@@ -83,7 +83,7 @@ export function ProjectMenu({
           <DialogHeader>
             <DialogTitle className="font-display text-2xl font-light tracking-[-0.03em]">프로젝트 삭제</DialogTitle>
             <DialogDescription>
-              &lsquo;{title}&rsquo;의 대화와 문서가 모두 지워지고, 되돌릴 수 없어요.
+              &lsquo;{title}&rsquo;의 대화와 문서가 모두 지워지고 되돌릴 수 없어요.
               {unlocked && " 잠금 해제에 쓴 크레딧도 돌아오지 않아요."}
             </DialogDescription>
           </DialogHeader>

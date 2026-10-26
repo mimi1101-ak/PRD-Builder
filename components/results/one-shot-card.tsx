@@ -18,7 +18,7 @@ export function OneShotCard({ tool, onPickStep }: { tool: string; onPickStep: ()
     },
     {
       title: "가짜로 채우지 않아요",
-      desc: '결제·로그인처럼 키가 필요한 부분은 비워 두고, 마지막에 "키 필요" 목록으로 알려 줘요.',
+      desc: '결제·로그인처럼 키가 필요한 부분은 비워 두고 마지막에 "키 필요" 목록으로 알려 줘요.',
     },
     {
       title: "AI가 정한 건 기록에 남아요",
@@ -46,7 +46,7 @@ export function OneShotCard({ tool, onPickStep }: { tool: string; onPickStep: ()
     </>,
     <>
       끝나면 &ldquo;키 필요&rdquo; 목록대로 키를 <code className="rounded bg-muted px-1.5 py-px font-mono text-[0.86em] text-foreground">.env.local</code>에
-      넣고, 아래 단계별 &ldquo;완료 확인&rdquo;으로 직접 눌러 보세요.
+      넣고 아래 단계별 &ldquo;완료 확인&rdquo;으로 직접 눌러 보세요.
     </>,
   ];
 
@@ -63,7 +63,7 @@ export function OneShotCard({ tool, onPickStep }: { tool: string; onPickStep: ()
         프롬프트 한 번으로 끝까지 만들기
       </h2>
       <p className="mt-2 text-[14.5px] leading-[1.75] text-ink-2">
-        단계마다 결과를 확인받지 않고, TASKS.md를 마지막 단계까지 이어서 진행해요. 그래도 언제든 멈추고 고칠 수 있어요.
+        단계마다 결과를 확인받지 않고 TASKS.md를 마지막 단계까지 이어서 진행해요. 그래도 언제든 멈추고 고칠 수 있어요.
       </p>
 
       <ul aria-label="안전장치" className="mt-[18px] grid gap-2 sm:grid-cols-2">
