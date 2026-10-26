@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 type ChatEvent =
   | { type: "user_saved"; message: ChatMessage }
   | { type: "text"; delta: string }
+  | { type: "options"; options: string[] } // 요약 저장 전에 먼저 오는 추천 답변
   | { type: "done"; message: ChatMessage; project: ProjectView }
   | { type: "error"; message: string; retryable: boolean; code?: string };
 
@@ -48,6 +49,11 @@ export function ChatView({
   const [failure, setFailure] = useState<Failure | null>(null);
   const [input, setInput] = useState("");
   const [loginOpen, setLoginOpen] = useState(false);
+  // 앞 턴이 저장되기 전에 먼저 받은 추천 답변, 그 사이에 눌러 둔 답 (저장이 끝나면 보낸다)
+  const [earlyOptions, setEarlyOptions] = useState<string[] | null>(null);
+  const [queued, setQueued] = useState<string | null>(null);
+  const queuedRef = useRef<string | null>(null);
+  const sendRef = useRef<(text?: string) => Promise<void>>(async () => {});
 
   const busyRef = useRef(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -85,6 +91,7 @@ export function ChatView({
         busyRef.current = true;
         setBusy(true);
         setFailure(null);
+        setEarlyOptions(null);
         stickToBottom.current = true;
 
         const tempId = -Date.now();
@@ -123,6 +130,8 @@ export function ChatView({
                 setMessages((m) => m.map((x) => (x.id === tempId ? ev.message : x)));
               } else if (ev.type === "text") {
                 setStreaming((s) => (s ?? "") + ev.delta);
+              } else if (ev.type === "options") {
+                setEarlyOptions(ev.options);
               } else if (ev.type === "done") {
                 setMessages((m) => [...m, ev.message]);
                 setProject(ev.project);
@@ -138,6 +147,7 @@ export function ChatView({
         }
 
         setStreaming(null);
+        setEarlyOptions(null);
         busyRef.current = false;
         setBusy(false);
 
@@ -149,18 +159,36 @@ export function ChatView({
           if (text && fresh && !fresh.some((m) => m.role === "user" && m.content === text)) setInput(text);
         }
 
-        if (!failed) return;
+        if (!failed) {
+          // 먼저 뜬 버튼으로 눌러 둔 답이 있으면 저장이 끝난 지금 보낸다
+          const next = queuedRef.current;
+          if (next !== null) {
+            queuedRef.current = null;
+            setQueued(null);
+            void sendRef.current(next);
+          }
+          return;
+        }
         const f: Failure = failed;
         if (f.retryable && attempt === 0 && canRetry) {
           text = undefined; // 이미 저장된 내 메시지에 대한 답만 다시 받는다
           continue;
         }
         setFailure(f);
+        // 눌러 둔 답은 보내지 않고 입력창으로 돌려놓는다
+        if (queuedRef.current !== null) {
+          setInput(queuedRef.current);
+          queuedRef.current = null;
+          setQueued(null);
+        }
         return;
       }
     },
     [finalCheck, projectId, resync],
   );
+  useEffect(() => {
+    sendRef.current = send;
+  }, [send]);
 
   // 처음 들어왔거나 이어하기: 마지막 메시지가 내 메시지면 AI 답을 받아 온다.
   // (개발 모드에서 effect 가 두 번 실행돼도 타이머 정리로 요청은 한 번만 나간다)
@@ -175,7 +203,7 @@ export function ChatView({
   useEffect(() => {
     const el = scrollRef.current;
     if (el && stickToBottom.current) el.scrollTop = el.scrollHeight;
-  }, [messages, streaming, failure, project.status]);
+  }, [messages, streaming, failure, project.status, queued]);
 
   function onScroll() {
     const el = scrollRef.current;
@@ -183,10 +211,21 @@ export function ChatView({
     stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
   }
 
+  // 앞 턴이 아직 저장 중이면 내 답을 화면에만 먼저 보여 두고, 저장이 끝나면 send 가 이어서 보낸다
+  function answer(text: string) {
+    if (earlyReady) {
+      queuedRef.current = text;
+      setQueued(text);
+      setInput("");
+      return;
+    }
+    void send(text);
+  }
+
   function submitInput() {
     const text = input.trim();
-    if (!text || busy || awaitingReply || done) return;
-    void send(text.slice(0, MAX_INPUT_LENGTH));
+    if (!text || !canType) return;
+    answer(text.slice(0, MAX_INPUT_LENGTH));
   }
 
   function makePrd() {
@@ -195,11 +234,14 @@ export function ChatView({
   }
 
   const lastAi = !awaitingReply && last?.role === "ai" ? last : null;
-  const options =
-    !busy && !failure && !done && lastAi
+  // 요약이 저장되기 전이라도 추천 답변이 먼저 오면 바로 답할 수 있다 (질문 단계에서만 온다)
+  const earlyReady = busy && earlyOptions !== null && queued === null;
+  const options = earlyReady
+    ? earlyOptions
+    : !busy && !failure && !done && lastAi
       ? lastAi.options.filter((o) => !(finalCheck && duplicatesFinalButton(o)))
       : [];
-  const canType = !busy && !awaitingReply && !done;
+  const canType = earlyReady || (!busy && !awaitingReply && !done);
 
   const progress = finalCheck || done ? 100 : (Math.min(questionCount, MAX_QUESTIONS) / MAX_QUESTIONS) * 100;
 
@@ -255,6 +297,10 @@ export function ChatView({
               </AiBubble>
             )}
 
+            {queued !== null && (
+              <MessageBubble message={{ id: -1, role: "user", content: queued, options: [], phase: "interview" }} />
+            )}
+
             {(finalCheck || done) && !busy && lastAi && (
               <FinalCheckCard project={project} done={done} onMakePrd={makePrd} />
             )}
@@ -285,13 +331,13 @@ export function ChatView({
               </div>
             ) : (
               <>
-                {(options.length > 0 || (lastAi && !finalCheck && !busy && !failure)) && (
+                {(options.length > 0 || earlyReady || (lastAi && !finalCheck && !busy && !failure)) && (
                   <div className="mb-3 flex flex-wrap gap-2">
                     {options.map((option, i) => (
                       <button
                         key={option}
                         type="button"
-                        onClick={() => void send(option)}
+                        onClick={() => answer(option)}
                         className="group inline-flex min-h-10 items-center gap-2.5 rounded-full border border-line-strong bg-background py-1 pl-[5px] pr-4 text-left text-sm transition-colors hover:border-foreground"
                       >
                         <span className="grid size-7 shrink-0 place-items-center rounded-full border border-line-strong font-mono text-[11px] text-muted-foreground transition-colors group-hover:border-foreground group-hover:bg-foreground group-hover:text-background">
@@ -300,10 +346,10 @@ export function ChatView({
                         {option}
                       </button>
                     ))}
-                    {!finalCheck && lastAi && (
+                    {!finalCheck && (lastAi || earlyReady) && (
                       <button
                         type="button"
-                        onClick={() => void send(DONT_KNOW_MESSAGE)}
+                        onClick={() => answer(DONT_KNOW_MESSAGE)}
                         className="inline-flex min-h-10 items-center rounded-full border border-dashed border-line-strong bg-background px-4 text-sm text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
                       >
                         잘 모르겠어요 (추천해 주세요)
@@ -340,7 +386,7 @@ export function ChatView({
                     aria-label="보내기"
                     className="mb-px grid size-10 shrink-0 place-items-center rounded-full bg-foreground text-background transition-colors disabled:bg-paper-3 disabled:text-ink-4"
                   >
-                    {busy ? <Loader2 className="size-[18px] animate-spin" /> : <ArrowUp className="size-[18px]" />}
+                    {busy && !earlyReady ? <Loader2 className="size-[18px] animate-spin" /> : <ArrowUp className="size-[18px]" />}
                   </button>
                 </form>
               </>

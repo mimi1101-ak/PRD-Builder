@@ -190,9 +190,15 @@ export type TurnResult = {
   summary: IdeaSummary;
 };
 
+export type TurnHandlers = {
+  onText: (delta: string) => void;
+  // 질문 단계(interview)에서 추천 답변이 완성되면, 요약을 다 쓰기 전에 먼저 알린다 (한 번만).
+  onOptions?: (options: string[]) => void;
+};
+
 export async function runInterviewTurn(
   input: TurnInput,
-  onText: (delta: string) => void,
+  handlers: TurnHandlers,
   signal?: AbortSignal,
 ): Promise<TurnResult> {
   const rule = turnRuleFor(input.status, input.questionCount);
@@ -215,13 +221,22 @@ export async function runInterviewTurn(
   // 도구 입력(JSON) 조각에서 message 를 꺼내, 새로 늘어난 글자만 화면으로 보낸다.
   let json = "";
   let shown = "";
+  let optionsSent = false;
   stream.on("streamEvent", (event) => {
     if (event.type !== "content_block_delta" || event.delta.type !== "input_json_delta") return;
     json += event.delta.partial_json;
     const message = partialStringField(json, "message");
     if (message.length > shown.length && message.startsWith(shown)) {
-      onText(message.slice(shown.length));
+      handlers.onText(message.slice(shown.length));
       shown = message;
+    }
+    if (!optionsSent && handlers.onOptions) {
+      const early = earlyOptions(json, rule);
+      if (early) {
+        optionsSent = true;
+        // 최종 확인으로 넘어가는 턴은 저장된 상태가 있어야 "이대로 PRD 만들기"가 동작하므로 끝까지 기다린다.
+        if (early.phase === "interview") handlers.onOptions(early.options);
+      }
     }
   });
   const final = await stream.finalMessage();
@@ -238,6 +253,20 @@ export async function runInterviewTurn(
   if (!text) throw new AiError("AI 응답이 비어 있어요. 다시 시도해 주세요.");
 
   return mergeResult(input, rule, text, update);
+}
+
+// options 배열과 phase 가 다 들어왔으면(요약보다 먼저 온다) 마지막에 저장될 것과 같은 버튼 목록을 돌려준다.
+function earlyOptions(json: string, rule: TurnRule): { options: string[]; phase: Phase } | null {
+  const options = json.match(/"options"\s*:\s*(\[[^\]]*\])/);
+  const phase = json.match(/"phase"\s*:\s*"(interview|final_check)"/);
+  if (!options || !phase) return null;
+  try {
+    const list = z.array(z.string()).parse(JSON.parse(options[1]));
+    const enforced = enforcePhase(rule, phase[1] as Phase);
+    return { options: cleanOptions(list, enforced), phase: enforced };
+  } catch {
+    return null;
+  }
 }
 
 // 스트리밍 중인 JSON 조각에서 문자열 필드 하나를 지금까지 온 만큼 꺼낸다 (아직 안 왔으면 "").

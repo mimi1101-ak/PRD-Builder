@@ -36,7 +36,8 @@ async function handleGET(request: Request) {
   return Response.json({ project: toProjectView(project), messages });
 }
 
-// 대화 응답 만들기 (PRD 7장 ①): 요약 + 질문 1개를 스트리밍하고, 끝나면 요약·영역 상태·추천 답변을 보낸다.
+// 대화 응답 만들기 (PRD 7장 ①): 메시지(답 받기 + 질문 1개)를 스트리밍하고, 추천 답변이 완성되면 먼저 보낸 뒤,
+// 끝나면 저장하고 요약·영역 상태와 함께 done 을 보낸다. 저장은 지금처럼 done 직전에 한 번만 한다.
 async function handlePOST(request: Request) {
   const parsed = ChatSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return jsonError(400, `메시지는 1~${MAX_INPUT_LENGTH}자로 입력해 주세요.`);
@@ -101,7 +102,10 @@ async function handlePOST(request: Request) {
           summary: normalizeSummary(project.summary),
           history,
         },
-        (delta) => send({ type: "text", delta }),
+        {
+          onText: (delta) => send({ type: "text", delta }),
+          onOptions: (options) => send({ type: "options", options }),
+        },
         request.signal,
       );
     } catch (err) {
