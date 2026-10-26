@@ -108,18 +108,27 @@ type InterviewUpdate = z.infer<typeof UpdateSchema>;
 
 // ── 이번 턴의 단계 규칙 (PRD: 5문항 전 완성 금지, 10문항째 무조건 final_check)
 
-type TurnRule = "must_ask" | "may_finish" | "must_finish" | "final_check";
+type TurnRule = "must_ask" | "keep_asking" | "may_finish" | "must_finish" | "final_check";
 
-export function turnRuleFor(status: ProjectStatus, questionCount: number): TurnRule {
+// 아직 done 이 아닌 영역
+function openAreas(coverage: Coverage) {
+  return AREA_KEYS.filter((k) => coverage[k] !== "done");
+}
+
+export function turnRuleFor(status: ProjectStatus, questionCount: number, coverage: Coverage): TurnRule {
   if (status === "final_check" || status === "done") return "final_check";
   if (questionCount >= MAX_QUESTIONS) return "must_finish";
   if (questionCount < MIN_QUESTIONS) return "must_ask";
+  // 덜 찬 영역이 둘 이상이면 마칠 수 없다. 모델에게 맡기면 남은 영역을 한꺼번에 done 으로 바꾸고 일찍 끝내곤 한다.
+  // 하나까지는 허용한다: 방금 받은 답으로 마지막 영역이 채워질 수 있다.
+  if (openAreas(coverage).length > 1) return "keep_asking";
   return "may_finish";
 }
 
 function enforcePhase(rule: TurnRule, modelPhase: Phase | undefined): Phase {
   switch (rule) {
     case "must_ask":
+    case "keep_asking":
       return "interview";
     case "must_finish":
     case "final_check":
@@ -135,6 +144,9 @@ function buildSystem(input: TurnInput, rule: TurnRule): Anthropic.TextBlockParam
     experience: experienceLabel(input.experience),
     min_questions: MIN_QUESTIONS,
     max_questions: MAX_QUESTIONS,
+    open_areas: openAreas(input.coverage)
+      .map((k) => AREA_LABELS[k])
+      .join(", "),
   };
   let ruleText = fill(promptSection("interview.md", `rule_${rule}`), vars);
   if (rule === "may_finish" || rule === "must_finish") {
@@ -201,7 +213,7 @@ export async function runInterviewTurn(
   handlers: TurnHandlers,
   signal?: AbortSignal,
 ): Promise<TurnResult> {
-  const rule = turnRuleFor(input.status, input.questionCount);
+  const rule = turnRuleFor(input.status, input.questionCount, input.coverage);
   const system = buildSystem(input, rule);
   const messages = toApiMessages(input.history);
 

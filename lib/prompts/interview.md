@@ -83,6 +83,9 @@
 <!-- @section rule_must_ask -->
 아직 최소 질문 수({{min_questions}}개)를 채우지 않았습니다. 완성 판단을 하지 말고, 요약한 뒤 다음 질문 1개를 하세요. phase 는 "interview" 입니다.
 
+<!-- @section rule_keep_asking -->
+아직 채워지지 않은 영역이 둘 이상 남아 있습니다: {{open_areas}}. 최종 확인으로 넘어가지 말고, 답을 받은 뒤 이 중 이 아이디어에서 가장 중요한 영역 하나를 질문하세요. phase 는 "interview" 입니다.
+
 <!-- @section rule_may_finish -->
 9개 영역이 모두 done 이 되었다면 인터뷰를 마치고 최종 확인으로 넘어가세요(phase "final_check", 아래 "최종 확인 형식"). 아직 비어 있거나 애매한 영역이 있으면 요약한 뒤 다음 질문 1개를 하세요(phase "interview").
 
