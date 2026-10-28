@@ -2,8 +2,9 @@ import Link from "next/link";
 import { CircleX } from "lucide-react";
 import { safeNextPath } from "@/lib/access";
 import { Button } from "@/components/ui/button";
+import { PRIVATE_ROBOTS } from "@/lib/site";
 
-export const metadata = { title: "결제 실패" };
+export const metadata = { title: "결제 실패", robots: PRIVATE_ROBOTS };
 
 // 토스가 붙여 보내는 message 는 화면에 그대로 쓰지 않는다 (주소만 바꿔 아무 글이나 띄울 수 있어서). 코드로 정해 둔 문구를 고른다.
 const FAIL_MESSAGES: Record<string, string> = {

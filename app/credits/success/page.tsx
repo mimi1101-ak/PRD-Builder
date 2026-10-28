@@ -1,7 +1,8 @@
 import { safeNextPath } from "@/lib/access";
 import { ConfirmPayment } from "@/components/credits/confirm-payment";
+import { PRIVATE_ROBOTS } from "@/lib/site";
 
-export const metadata = { title: "결제 확인" };
+export const metadata = { title: "결제 확인", robots: PRIVATE_ROBOTS };
 
 // 토스 결제창이 성공하면 이곳으로 돌아온다: ?paymentKey&orderId&amount
 // 이 단계에서는 아직 결제가 끝난 게 아니다. 서버가 승인 API 를 호출해야 완료된다.

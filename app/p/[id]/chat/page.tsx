@@ -3,8 +3,9 @@ import { getProjectForViewer, getViewer } from "@/lib/access";
 import { loadMessages } from "@/lib/projects";
 import { toProjectView } from "@/lib/domain";
 import { ChatView } from "@/components/chat/chat-view";
+import { PRIVATE_ROBOTS } from "@/lib/site";
 
-export const metadata = { title: "아이디어 대화" };
+export const metadata = { title: "아이디어 대화", robots: PRIVATE_ROBOTS };
 
 export default async function ChatPage(props: PageProps<"/p/[id]/chat">) {
   const { id } = await props.params;

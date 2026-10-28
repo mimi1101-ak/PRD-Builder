@@ -5,9 +5,16 @@ import { SiteFooter } from "@/components/site-footer";
 import { getViewer } from "@/lib/access";
 import { BUSINESS } from "@/lib/business";
 import { BEST_PRODUCT, PRD_PREVIEW_SECTIONS, PRODUCTS, REWRITES_PER_CREDIT, type ProductKey } from "@/lib/domain";
+import { publicPageMetadata } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
-export const metadata = { title: "요금 안내" };
+export const metadata = publicPageMetadata({
+  title: "요금 안내",
+  description: `인터뷰와 PRD 앞부분(1~${PRD_PREVIEW_SECTIONS}장)은 무료예요. 크레딧 1건 ${PRODUCTS.credit_1.amount.toLocaleString()}원으로 PRD 전체·작업 단계·CLAUDE.md를 열 수 있어요. ${Object.values(PRODUCTS)
+    .map((p) => p.title)
+    .join("·")} 상품별 금액과 제공 내용을 확인하세요.`,
+  path: "/pricing",
+});
 
 // 로그인 없이 볼 수 있는 상품 안내 (결제 심사: 상품 이미지·금액·상세·제공 기간·환불 정책 노출).
 // 금액은 lib/domain.ts 의 PRODUCTS 를 그대로 쓴다.

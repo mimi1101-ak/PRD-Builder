@@ -5,8 +5,9 @@ import { BuyButtons } from "@/components/credits/buy-buttons";
 import { LoginButtons } from "@/components/login-buttons";
 import { SiteFooter } from "@/components/site-footer";
 import { PRD_PREVIEW_SECTIONS, REWRITES_PER_CREDIT } from "@/lib/domain";
+import { PRIVATE_ROBOTS } from "@/lib/site";
 
-export const metadata = { title: "크레딧" };
+export const metadata = { title: "크레딧", robots: PRIVATE_ROBOTS };
 
 type PaymentRow = { order_id: string; amount: number; credits_added: number; status: string; created_at: string };
 

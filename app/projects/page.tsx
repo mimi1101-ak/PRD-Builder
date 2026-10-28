@@ -6,8 +6,9 @@ import { LoginButtons } from "@/components/login-buttons";
 import { SiteFooter } from "@/components/site-footer";
 import { ProjectsView, type ProjectItem } from "@/components/projects/projects-view";
 import { PROJECTS_VIEW_COOKIE, type ProjectStatus } from "@/lib/domain";
+import { PRIVATE_ROBOTS } from "@/lib/site";
 
-export const metadata = { title: "내 프로젝트" };
+export const metadata = { title: "내 프로젝트", robots: PRIVATE_ROBOTS };
 
 type Row = {
   id: string;

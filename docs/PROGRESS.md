@@ -94,6 +94,14 @@
    - `/terms` 를 17조+부칙으로: 약관 게시·변경(7일·30일 전 공지, 불리하면 이메일), 이용계약·만 14세 미만, 서비스 내용(무료 이용 한도), 생성형 AI 고지·생성물 권리, 결제·미성년자 결제 취소, 청약철회 제한(전자상거래법 제17조 제2항 제5호), 탈퇴, 회사·이용자 의무, 이용 제한, 서비스 종료 시 남은 크레딧 환불, 지식재산권, 손해배상·면책(고의·중과실 제외), 통지, 분쟁·관할. 시행일 2026-10-28.
    - 화면: 잠금 해제 확인 창 "사용한 크레딧은 환불되지 않아요."(굵게), 첫 화면 예시 아래 "MOMO는 생성형 AI예요. 질문과 문서는 AI가 만들어요.", 대화 말풍선 이름 "MOMO · AI", 결과 화면 머리 "Result · AI 생성 · 날짜". 내려받는 파일 안은 그대로(생성 문서는 바꾸지 않는다는 결정).
    - 확인: tsc·lint·build, 개발 서버에서 약관 17조·부칙·사업자 정보, 첫 화면 문구(데스크톱·375px 한 줄). 확인 창·결과 화면 머리·대화 이름은 로그인·AI 호출이 필요해 코드로만 확인 → **배포 후 실제 계정으로 볼 것.**
+15. **SEO 기본** (2026-10-28, 공유 그림 시안 `../design-mockup/og-image.html` A 승인 후 반영)
+   - `lib/site.ts`: 대표 주소 `SITE_URL`(Vercel 운영 도메인 `VERCEL_PROJECT_PRODUCTION_URL` 우선, 자체 도메인을 붙이면 자동으로 바뀜), 공유 기본값 `OPEN_GRAPH_BASE`·`TWITTER_BASE`, 공개 화면용 `publicPageMetadata`, 비공개 화면용 `PRIVATE_ROBOTS`.
+   - `app/robots.ts`(/api/ /auth/ /admin /p/ 수집 막음 + sitemap 주소), `app/sitemap.ts`(홈·요금·약관·처리방침·환불).
+   - 대표 주소(canonical)는 레이아웃에 넣으면 모든 화면이 홈을 가리키므로 공개 화면마다 넣는다. 화면별 openGraph 는 레이아웃 값을 통째로 바꾸므로 `OPEN_GRAPH_BASE` 를 펼쳐 쓴다(안 그러면 공유 그림이 빠짐).
+   - 공유 그림은 `public/og.png`(1200×630, 시안 A 를 headless Chrome 으로 렌더). 그림을 바꾸면 파일 이름도 바꾼다(카카오톡 캐시).
+   - 검색 제외(noindex): 로그인·크레딧(성공·실패)·내 프로젝트·결과 문서·대화. 개발자 도구는 원래 noindex.
+   - 확인: 운영용 빌드(next start 3100)로 robots·sitemap·화면별 canonical·og:url·og:title·og:image·twitter:image, 비공개 화면 noindex.
+   - 남은 일: 구글 서치 콘솔 sitemap 제출, 네이버 서치어드바이저 등록(인증 코드를 받으면 layout `verification.other` 에 `naver-site-verification` 추가).
 
 ## 알아 둘 것
 

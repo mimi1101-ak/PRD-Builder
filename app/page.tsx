@@ -1,7 +1,15 @@
+import type { Metadata } from "next";
 import { BlackHole } from "@/components/black-hole";
 import { IdeaComposer } from "@/components/home/idea-composer";
 import { ResultPreviews } from "@/components/home/result-previews";
 import { SiteFooter } from "@/components/site-footer";
+import { OPEN_GRAPH_BASE } from "@/lib/site";
+
+// 제목·설명은 레이아웃의 기본값을 쓰고, 대표 주소와 공유 주소만 정한다
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+  openGraph: { ...OPEN_GRAPH_BASE, url: "/" },
+};
 
 const STEPS = [
   { no: "01 — 질문", title: "질문에 답하기", desc: "기획에 빠진 부분을 하나씩 물어봐요.\n잘 모르겠으면 추천 답변을 고르면 돼요." },

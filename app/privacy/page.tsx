@@ -1,8 +1,13 @@
 import { Markdown } from "@/components/markdown";
 import { SiteFooter } from "@/components/site-footer";
 import { BUSINESS } from "@/lib/business";
+import { publicPageMetadata } from "@/lib/site";
 
-export const metadata = { title: "개인정보처리방침" };
+export const metadata = publicPageMetadata({
+  title: "개인정보처리방침",
+  description: "dot.PRD 개인정보처리방침: 처리하는 정보와 보관 기간, 국외 이전, 이용자의 권리, 개인정보 보호책임자를 안내해요.",
+  path: "/privacy",
+});
 
 // 개인정보 보호법 제30조(처리방침 기재 사항)·제28조의8(국외 이전) 기준. 사업자 정보는 lib/business.ts 에서 가져온다.
 // 보관 기간 문장(로그인 안 한 프로젝트 30일, 로그인 기록 3개월)은 cleanup_expired_data 함수가 실제로 지킨다.

@@ -5,8 +5,9 @@ import { LoginButtons } from "@/components/login-buttons";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PRIVATE_ROBOTS } from "@/lib/site";
 
-export const metadata = { title: "로그인" };
+export const metadata = { title: "로그인", robots: PRIVATE_ROBOTS };
 
 // 주소창의 error 는 정해 둔 코드만 받는다. 주소에 쓴 글이 그대로 화면에 뜨면 가짜 안내문을 띄울 수 있어서.
 // 코드는 app/auth/callback(oauth)·app/auth/password(missing, invalid) 가 붙인다.

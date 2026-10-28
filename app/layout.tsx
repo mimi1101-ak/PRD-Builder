@@ -3,6 +3,7 @@ import { Geist_Mono, Hahmlet } from "next/font/google";
 import { SiteHeader } from "@/components/site-header";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { OPEN_GRAPH_BASE, SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL, TWITTER_BASE } from "@/lib/site";
 // 본문: Pretendard (한글을 92조각으로 나눈 파일이라 화면에 쓰인 글자만 내려받는다)
 import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 import "./globals.css";
@@ -23,13 +24,17 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
+// 사이트 공통 정보 (lib/site.ts). 대표 주소(canonical)는 화면마다 달라서 각 화면에서 정한다.
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "dot.PRD — 질문에 답하면 PRD가 완성돼요",
-    template: "%s · dot.PRD",
+    default: SITE_TITLE,
+    template: `%s · ${SITE_NAME}`,
   },
-  description:
-    "아이디어 한 줄을 넣으면 질문 5~10개로 빈 곳을 채운 뒤, 클로드 코드에 바로 넣을 수 있는 PRD·작업 단계·CLAUDE.md를 만들어 드려요.",
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  openGraph: OPEN_GRAPH_BASE,
+  twitter: TWITTER_BASE,
   // 구글 서치 콘솔 사이트 소유 확인 (구글 로그인 브랜드 인증에 필요)
   verification: { google: "QNvlDg01g5qZ-k-AqYKH7DMcGIs0PoLPEuT-viW9lXc" },
 };

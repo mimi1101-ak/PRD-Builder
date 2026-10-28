@@ -6,8 +6,9 @@ import { REWRITES_PER_CREDIT, UNLIMITED_REWRITES, toProjectView } from "@/lib/do
 import { ResultView } from "@/components/results/result-view";
 import { LoginButtons } from "@/components/login-buttons";
 import { Logo } from "@/components/logo";
+import { PRIVATE_ROBOTS } from "@/lib/site";
 
-export const metadata = { title: "결과 문서" };
+export const metadata = { title: "결과 문서", robots: PRIVATE_ROBOTS };
 
 export default async function ResultPage(props: PageProps<"/p/[id]">) {
   const { id } = await props.params;

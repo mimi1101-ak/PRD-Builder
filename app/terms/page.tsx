@@ -1,8 +1,13 @@
 import { Markdown } from "@/components/markdown";
 import { SiteFooter } from "@/components/site-footer";
 import { BUSINESS_FIELDS } from "@/lib/business";
+import { publicPageMetadata } from "@/lib/site";
 
-export const metadata = { title: "이용약관" };
+export const metadata = publicPageMetadata({
+  title: "이용약관",
+  description: "dot.PRD 이용약관: 서비스 내용, 크레딧 결제와 환불, 생성형 AI 이용, 회원의 권리와 의무를 안내해요.",
+  path: "/terms",
+});
 
 // 공정위 전자상거래 표준약관의 필수 조항 기준. 사업자 정보는 lib/business.ts 에서 가져온다.
 // 제6조(생성형 AI)의 화면 표시는 첫 화면·대화 말풍선·결과 화면 머리에 있다. 제8조 2항의 안내는 잠금 해제 확인 창에 있다.

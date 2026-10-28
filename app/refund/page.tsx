@@ -1,7 +1,12 @@
 import { Markdown } from "@/components/markdown";
 import { SiteFooter } from "@/components/site-footer";
+import { publicPageMetadata } from "@/lib/site";
 
-export const metadata = { title: "환불정책" };
+export const metadata = publicPageMetadata({
+  title: "환불정책",
+  description: "dot.PRD 크레딧 환불정책: 결제 후 7일 이내 쓰지 않은 크레딧 환불, 묶음 상품 부분 환불 계산, 신청 방법을 안내해요.",
+  path: "/refund",
+});
 
 // 금액은 lib/domain.ts 의 크레딧 상품(1건 3,900원, 3건 9,900원, 5건 14,900원)과 맞춘다.
 const REFUND = `# 환불정책
