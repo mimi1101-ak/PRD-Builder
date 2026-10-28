@@ -198,6 +198,9 @@ export const GUEST_TURNS_PER_10_MIN = 30;
 // 로그인 계정의 하루(한국 시간) PRD 생성 수. 개발자 계정은 제외
 export const PRD_PER_DAY = 10;
 
+// 회원 탈퇴 화면에서 직접 입력해야 하는 글자 (실수로 누르는 것 막기, app/api/account)
+export const DELETE_CONFIRM_WORD = "탈퇴";
+
 // 개발자 계정의 다시 쓰기 남은 횟수 (사실상 무제한)
 export const UNLIMITED_REWRITES = 9999;
 export function rewritesLeftLabel(left: number) {

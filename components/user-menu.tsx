@@ -54,6 +54,12 @@ export function UserMenu({ nickname, isDeveloper = false }: { nickname: string; 
           <LogOut />
           로그아웃
         </DropdownMenuItem>
+        {/* 개발자 계정은 실수로 지우지 않게 탈퇴 메뉴를 숨긴다 */}
+        {!isDeveloper && (
+          <DropdownMenuItem asChild className="text-muted-foreground">
+            <Link href="/account/delete">회원 탈퇴</Link>
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
