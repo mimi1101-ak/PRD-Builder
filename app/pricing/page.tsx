@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/site-footer";
 import { getViewer } from "@/lib/access";
 import { BUSINESS } from "@/lib/business";
-import { BEST_PRODUCT, PRODUCTS, REWRITES_PER_CREDIT, type ProductKey } from "@/lib/domain";
+import { BEST_PRODUCT, PRD_PREVIEW_SECTIONS, PRODUCTS, REWRITES_PER_CREDIT, type ProductKey } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "요금 안내" };
@@ -18,6 +18,7 @@ const IMAGES: Record<ProductKey, string> = {
 };
 
 const INCLUDED = [
+  "PRD.md 전체 열람",
   "TASKS.md(작업 단계) 열람",
   "CLAUDE.md 열람",
   "PRD.md · TASKS.md · CLAUDE.md zip 다운로드",
@@ -31,6 +32,7 @@ const DETAILS: { label: string; lines: string[] }[] = [
     label: "제공 내용",
     lines: [
       "크레딧 1건으로 프로젝트 1개 잠금 해제",
+      `PRD 전체 보기 (${PRD_PREVIEW_SECTIONS + 1}~9장 포함)`,
       "작업 단계 문서 보기 (TASKS.md)",
       "AI 코딩 도구용 안내서 보기 (CLAUDE.md)",
       "문서 3개 한 번에 내려받기 (PRD.md · TASKS.md · CLAUDE.md, zip 파일)",
@@ -55,7 +57,8 @@ export default async function PricingPage() {
         <p className="mono-label text-muted-foreground">Pricing</p>
         <h1 className="display-title mt-3 text-[clamp(36px,5vw,56px)]">요금 안내</h1>
         <p className="mt-4 text-sm leading-6 text-muted-foreground">
-          인터뷰와 PRD 생성은 무료예요. 작업 단계(TASKS.md)와 CLAUDE.md를 열 때 크레딧을 써요.
+          인터뷰와 PRD 앞부분(1~{PRD_PREVIEW_SECTIONS}장)은 무료예요. PRD 나머지와 작업 단계(TASKS.md)·CLAUDE.md를 열 때
+          크레딧을 써요.
         </p>
 
         {/* 상품마다 가로 한 줄: 왼쪽 이미지, 오른쪽 이름·가격·구매 */}
@@ -121,7 +124,7 @@ export default async function PricingPage() {
         <h2 className="mb-4 mt-12 font-display text-[26px] font-light tracking-[-0.03em]">무료로 사용 가능한 기능</h2>
         <ul className="space-y-1 text-sm leading-6 text-ink-2">
           <li>· MOMO와의 아이디어 인터뷰 (횟수 제한 없음)</li>
-          <li>· PRD.md 생성과 열람·복사</li>
+          <li>· PRD.md 생성과 앞부분(1~{PRD_PREVIEW_SECTIONS}장: 개요·대상 사용자·핵심 기능) 열람</li>
         </ul>
 
         <h2 className="mb-4 mt-12 font-display text-[26px] font-light tracking-[-0.03em]">환불 정책</h2>

@@ -48,6 +48,37 @@ export function replaceSection(content: string, heading: string, replacement: st
   return [...before, ...body, ...glue, ...after].join("\n");
 }
 
+// PRD 미리보기: "## 4. 사용자 흐름"처럼 번호가 limit 보다 큰 첫 장부터 잠근다.
+// 장 번호가 없는 문서면 limit+1 번째 "## " 장부터. 잠글 곳이 없으면 null.
+function findPrdCut(content: string, limit: number) {
+  const sections = splitSections(content);
+  const numberOf = (title: string) => title.match(/^(\d+)\s*[.)]/)?.[1];
+  let cut = sections.findIndex((s) => Number(numberOf(s.title) ?? 0) > limit);
+  if (cut < 0 && !sections.some((s) => numberOf(s.title))) cut = sections.length > limit ? limit : -1;
+  if (cut < 0) return null;
+  // 잠그는 장 제목 줄이 시작하는 글자 위치 (앞 줄의 줄바꿈까지 포함)
+  const offset = content
+    .split("\n")
+    .slice(0, sections[cut].start)
+    .reduce((sum, line) => sum + line.length + 1, 0);
+  return { offset, lockedTitles: sections.slice(cut).map((s) => s.title) };
+}
+
+export function splitPrdPreview(content: string, limit: number) {
+  const cut = findPrdCut(content, limit);
+  if (!cut) return { preview: content, lockedTitles: [] as string[] };
+  return { preview: content.slice(0, cut.offset).trimEnd(), lockedTitles: cut.lockedTitles };
+}
+
+// 만드는 중인 PRD 에서 지금 브라우저로 보내도 되는 부분 (앞에서 보낸 글자를 줄이지 않는다).
+// 잠글 장의 제목인지 아직 모르는 "#" 줄은 줄이 끝날 때까지 보내지 않는다.
+export function streamingPrdPreview(text: string, limit: number) {
+  const complete = text.slice(0, text.lastIndexOf("\n") + 1);
+  const cut = findPrdCut(complete, limit);
+  if (cut) return complete.slice(0, cut.offset);
+  return /^\s*#/.test(text.slice(complete.length)) ? complete : text;
+}
+
 // AI 가 문서 전체를 ``` 로 감싸 보낸 경우 벗겨 낸다.
 export function stripOuterFence(text: string) {
   const trimmed = text.trim();

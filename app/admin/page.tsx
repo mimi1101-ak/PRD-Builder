@@ -8,7 +8,6 @@ export const metadata = { title: "개발자 도구", robots: { index: false, fol
 
 const PERKS = [
   { label: "내 계정", value: null },
-  { label: "무료 PRD", value: "제한 없음" },
   { label: "잠금 해제", value: "크레딧 차감 없음" },
   { label: "다시 쓰기", value: "제한 없음" },
 ];

@@ -63,6 +63,12 @@
    - 잠금 카드 혜택에 "한 번에 끝까지 만드는 원샷 프롬프트" 한 줄 추가.
    - 확인: 임시 견본 페이지로 잠김·단계별·원샷·커서 문구·새로고침 유지·390px 확인(로컬 로그인 없음). **배포 후 실제 계정으로 한 번 더 확인할 것.**
 9. 참고: Anthropic 콘솔에 월 사용 한도 걸기, 결제 열면 Vercel Pro 로 전환(Hobby 는 비상업용). 로그인 창의 supabase.co 주소를 없애려면 내 도메인 + Supabase Custom Domain(유료).
+10. **PRD 미리보기** (2026-10-28, 시안 `../design-mockup/prd-preview.html` 승인 후 적용, 마이그레이션 `20261028000000_prd_preview.sql`)
+   - 인터뷰·PRD 생성은 무제한 무료(계정당 3개 제한 없앰). 잠금 해제 전에는 PRD 1~3장만 브라우저로 보낸다(`lib/domain.ts` `PRD_PREVIEW_SECTIONS`). 4장부터는 장 제목만 보내 목차·잠금 카드에 자물쇠로 보여 준다.
+   - 자르기는 서버에서만(`lib/markdown.ts` `splitPrdPreview`, 만드는 중에는 `streamingPrdPreview`). DB 에는 PRD 전체가 저장되고, 작업 단계·CLAUDE.md 생성에도 전체를 쓴다.
+   - 크레딧 1건 = PRD 나머지 + 작업 단계 + CLAUDE.md. 첫 유료 문서(CLAUDE.md)가 만들어지는 순간 차감·잠금 해제되고 PRD 전체가 함께 열린다.
+   - 이 변경 전에 만든 PRD 는 `projects.prd_free = true` 로 계속 전체 공개. 새 가입 크레딧 0건(기존 잔액 그대로).
+   - 확인: 임시 견본 페이지로 잠김(크레딧 0·있음)·확인 창·TASKS 카드·예전 PRD·375px 확인, 잠긴 장 내용이 HTML 에 없는 것 확인. **배포 후 실제 계정으로 새 PRD 생성 → 잠금 해제까지 한 번 더 확인할 것.**
 
 ## 알아 둘 것
 

@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { BuyButtons } from "@/components/credits/buy-buttons";
 import { LoginButtons } from "@/components/login-buttons";
 import { SiteFooter } from "@/components/site-footer";
-import { REWRITES_PER_CREDIT } from "@/lib/domain";
+import { PRD_PREVIEW_SECTIONS, REWRITES_PER_CREDIT } from "@/lib/domain";
 
 export const metadata = { title: "크레딧" };
 
@@ -82,11 +82,12 @@ export default async function CreditsPage(props: PageProps<"/credits">) {
 
         <div className="mt-8 space-y-1 border-t pt-5 text-sm leading-6 text-muted-foreground">
           <p>
-            <b className="text-foreground">크레딧 1건</b> = 프로젝트 1개의 작업 단계 + CLAUDE.md 열람, 세 파일 zip
+            <b className="text-foreground">크레딧 1건</b> = 프로젝트 1개의 PRD 전체 + 작업 단계 + CLAUDE.md 열람, 세 파일 zip
             다운로드, 섹션 다시 쓰기 {REWRITES_PER_CREDIT}회. 한 번 연 프로젝트는 계속 볼 수 있어요.
           </p>
           <p className="mt-1">
-            <b className="text-foreground">무료</b>: MOMO와의 인터뷰는 무제한이에요. 만든 PRD는 언제든 다시 보고 복사할 수 있어요.
+            <b className="text-foreground">무료</b>: MOMO와의 인터뷰는 무제한이고, PRD 앞부분(1~{PRD_PREVIEW_SECTIONS}장)은 바로 볼 수
+            있어요.
           </p>
           <p className="mt-1">
             결제는 토스페이먼츠로 안전하게 처리돼요.

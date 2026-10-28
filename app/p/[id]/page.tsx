@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getProjectForViewer, getViewer } from "@/lib/access";
-import { loadCredits, loadDocuments, toDocState } from "@/lib/projects";
+import { loadCredits, loadDocuments, prdOpen, toDocState, toPrdState } from "@/lib/projects";
 import { isAdmin } from "@/lib/admin";
 import { REWRITES_PER_CREDIT, UNLIMITED_REWRITES, toProjectView } from "@/lib/domain";
 import { ResultView } from "@/components/results/result-view";
@@ -49,8 +49,8 @@ export default async function ResultPage(props: PageProps<"/p/[id]">) {
       key={project.id}
       project={view}
       initialDocs={{
-        prd: toDocState(docs.prd),
-        // 잠금 해제 전에는 유료 문서 내용을 브라우저로 보내지 않는다
+        // 잠금 해제 전에는 PRD 앞 장만 보내고, 유료 문서 내용은 브라우저로 보내지 않는다
+        prd: toPrdState(docs.prd, prdOpen(project)),
         tasks: project.unlocked ? toDocState(docs.tasks) : null,
         claude_md: project.unlocked ? toDocState(docs.claude_md) : null,
       }}

@@ -6,9 +6,10 @@ import { jsonError, ndjsonResponse } from "@/lib/ndjson";
 import { generateDocument } from "@/lib/ai/documents";
 import { describeAiError } from "@/lib/ai/client";
 import { checkTasks } from "@/lib/doc-check";
-import { loadCredits, loadDocuments, loadMessages } from "@/lib/projects";
+import { loadCredits, loadDocuments, loadMessages, prdOpen } from "@/lib/projects";
 import { isAdmin } from "@/lib/admin";
-import { FREE_PRD_PER_ACCOUNT, normalizeCoverage, normalizeSummary, type DocKind } from "@/lib/domain";
+import { splitPrdPreview, streamingPrdPreview } from "@/lib/markdown";
+import { PRD_PREVIEW_SECTIONS, normalizeCoverage, normalizeSummary, type DocKind } from "@/lib/domain";
 
 // 문서는 상위 모델로 길게 쓰므로 넉넉히
 export const maxDuration = 300;
@@ -19,10 +20,10 @@ const GenerateSchema = z.object({
 });
 
 // 문서 만들기 (PRD 7장 ②)
-// - PRD: 무료, 계정당 3개까지 (다 쓰면 더 만들 수 없음)
-// - 작업 단계·CLAUDE.md: 잠금 해제된 프로젝트만. 처음 열 때(작업 단계 생성 성공 시점)에 크레딧 1 차감
-// - 실패한 생성은 횟수·크레딧을 차감하지 않는다
-// - 개발자 계정은 PRD 개수 제한이 없고, 잠금 해제 때 크레딧이 차감되지 않는다 (unlock_project 안에서 처리)
+// - PRD: 무료, 개수 제한 없음. 전체를 만들어 저장하고, 잠금 해제 전에는 앞 장만 브라우저로 보낸다
+// - 작업 단계·CLAUDE.md: 처음 열 때(첫 유료 문서 생성 성공 시점)에 크레딧 1 차감 + 잠금 해제 → PRD 나머지도 열린다
+// - 실패한 생성은 크레딧을 차감하지 않는다
+// - 개발자 계정은 잠금 해제 때 크레딧이 차감되지 않는다 (unlock_project 안에서 처리)
 async function handlePOST(request: Request) {
   const parsed = GenerateSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return jsonError(400, "잘못된 요청이에요.");
@@ -73,21 +74,6 @@ async function handlePOST(request: Request) {
       .eq("project_id", project.id)
       .eq("kind", kind);
 
-  if (kind === "prd" && !isDeveloper) {
-    const { data: allowed } = await admin.rpc("consume_free_generation", {
-      p_user_id: userId,
-      p_limit: FREE_PRD_PER_ACCOUNT,
-    });
-    if (!allowed) {
-      await markFailed();
-      return jsonError(
-        429,
-        `무료로 만들 수 있는 PRD ${FREE_PRD_PER_ACCOUNT}개를 모두 만들었어요. 만든 PRD는 내 프로젝트에서 언제든 다시 볼 수 있어요.`,
-        "free_limit",
-      );
-    }
-  }
-
   const messages = await loadMessages(project.id);
   // TASKS 는 먼저 만든 CLAUDE.md 를 받아 폴더 구조·명령을 맞춘다 (화면은 PRD → CLAUDE.md → TASKS 순서로 만든다)
   const claudeMd = docs.claude_md?.status === "ready" ? docs.claude_md.content : "";
@@ -102,18 +88,31 @@ async function handlePOST(request: Request) {
     claudeMd,
   };
 
+  // 잠금 해제 전 PRD 는 만드는 중에도 앞 장까지만 보낸다
+  const previewOnly = kind === "prd" && !prdOpen(project);
+
   return ndjsonResponse(async (send) => {
+    let written = "";
+    let sent = 0;
+    const onDelta = (delta: string) => {
+      if (!previewOnly) return send({ type: "text", delta });
+      written += delta;
+      const visible = streamingPrdPreview(written, PRD_PREVIEW_SECTIONS);
+      if (visible.length > sent) send({ type: "text", delta: visible.slice(sent) });
+      sent = Math.max(sent, visible.length);
+    };
+
     let content: string;
     try {
-      content = await generateDocument(kind as DocKind, input, (delta) => send({ type: "text", delta }));
+      content = await generateDocument(kind as DocKind, input, onDelta);
       // CLAUDE.md 와 어긋나면(src/ 폴더, CLAUDE.md 새로 만들기 지시) 한 번만 다시 만든다.
-      // 같은 요청 안에서 다시 만들므로 크레딧·무료 횟수는 아래에서 한 번만 처리된다.
+      // 같은 요청 안에서 다시 만들므로 크레딧은 아래에서 한 번만 처리된다.
       if (kind === "tasks") {
         const issues = checkTasks(content, claudeMd || null);
         if (issues.length) {
           console.warn("[documents] tasks check failed, regenerating", project.id, issues);
           send({ type: "restart" });
-          content = await generateDocument(kind, input, (delta) => send({ type: "text", delta }));
+          content = await generateDocument(kind, input, onDelta);
           const again = checkTasks(content, claudeMd || null);
           if (again.length) console.error("[documents] tasks check failed after retry", project.id, again);
         }
@@ -121,7 +120,6 @@ async function handlePOST(request: Request) {
     } catch (err) {
       console.error(`[documents] ${kind} failed`, err);
       await markFailed();
-      if (kind === "prd" && !isDeveloper) await admin.rpc("refund_free_generation", { p_user_id: userId });
       const { message, retryable } = describeAiError(err);
       send({ type: "error", message, retryable });
       return;
@@ -129,6 +127,7 @@ async function handlePOST(request: Request) {
 
     // 작업 단계를 처음 연 순간 크레딧 1 차감 + 잠금 해제 (이미 해제됐으면 차감 없음)
     let unlocked = project.unlocked;
+    let openedPrd: string | undefined; // 이번에 잠금 해제됐으면 PRD 전체를 함께 보낸다
     if (kind !== "prd" && !unlocked) {
       const { data: result, error } = await admin.rpc("unlock_project", {
         p_project_id: project.id,
@@ -146,6 +145,7 @@ async function handlePOST(request: Request) {
         return;
       }
       unlocked = true;
+      if (!project.prd_free) openedPrd = prd;
     }
 
     const now = new Date().toISOString();
@@ -167,15 +167,18 @@ async function handlePOST(request: Request) {
       await admin.from("projects").update({ status: "done", updated_at: now }).eq("id", project.id);
     }
 
+    const preview = previewOnly ? splitPrdPreview(saved.content, PRD_PREVIEW_SECTIONS) : null;
     send({
       type: "done",
       document: {
         kind: saved.kind,
         status: saved.status,
-        content: saved.content,
+        content: preview ? preview.preview : saved.content,
         rewriteCount: saved.rewrite_count,
+        lockedTitles: preview?.lockedTitles,
       },
       unlocked,
+      prd: openedPrd,
       credits: await loadCredits(userId),
     });
   });

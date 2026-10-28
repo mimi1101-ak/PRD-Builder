@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BlackHole } from "@/components/black-hole";
 import { Markdown, headingId, splitHeadingNumber } from "@/components/markdown";
 import { CopyButton, DocBody, TaskSteps, stepAnchor, type RewriteTarget } from "@/components/results/doc-body";
-import { LockedPreview } from "@/components/results/locked-preview";
+import { LockedPreview, lockedChapterRange } from "@/components/results/locked-preview";
 import { OneShotCard, OneShotGuide } from "@/components/results/one-shot-card";
 import { RewriteDialog } from "@/components/results/rewrite-dialog";
 import {
@@ -28,6 +28,7 @@ import {
   DOC_FILES,
   DOC_KINDS,
   DOC_LABELS,
+  PRD_PREVIEW_SECTIONS,
   REWRITES_PER_CREDIT,
   rewritesLeftLabel,
   type BuildMode,
@@ -41,7 +42,15 @@ import { cn } from "@/lib/utils";
 import type { DocState } from "@/lib/projects";
 
 type UiStatus = "missing" | "generating" | "waiting" | "ready" | "failed";
-type DocUi = { status: UiStatus; content: string; rewriteCount: number; error?: string; errorCode?: string };
+type DocUi = {
+  status: UiStatus;
+  content: string;
+  rewriteCount: number;
+  error?: string;
+  errorCode?: string;
+  // 잠금 해제 전 PRD: 서버가 앞 장만 보내고 잠긴 장은 제목만 준다
+  lockedTitles?: string[];
+};
 type Docs = Record<DocKind, DocUi>;
 
 type GenerateEvent =
@@ -49,8 +58,9 @@ type GenerateEvent =
   | { type: "restart" } // 서버가 검사에 걸린 문서를 다시 쓰기 시작함 → 지금까지 받은 글을 비운다
   | {
       type: "done";
-      document: { kind: DocKind; content: string; rewriteCount: number };
+      document: { kind: DocKind; content: string; rewriteCount: number; lockedTitles?: string[] };
       unlocked: boolean;
+      prd?: string; // 이번 요청으로 잠금 해제됐으면 PRD 전체
       credits: number;
     }
   | { type: "error"; message: string; retryable: boolean; code?: string };
@@ -103,7 +113,7 @@ function toUi(doc: DocState | null): DocUi {
   if (doc.status === "failed" || !doc.content) {
     return { status: "failed", content: "", rewriteCount: doc.rewriteCount };
   }
-  return { status: "ready", content: doc.content, rewriteCount: doc.rewriteCount };
+  return { status: "ready", content: doc.content, rewriteCount: doc.rewriteCount, lockedTitles: doc.lockedTitles };
 }
 
 export function ResultView({
@@ -253,7 +263,9 @@ export function ResultView({
                   status: "ready",
                   content: ev.document.content,
                   rewriteCount: ev.document.rewriteCount,
+                  lockedTitles: ev.document.lockedTitles,
                 });
+                if (ev.prd) patchDoc("prd", { content: ev.prd, lockedTitles: undefined });
               } else if (ev.type === "error") {
                 failure = { message: ev.message, retryable: ev.retryable, code: ev.code };
               }
@@ -318,10 +330,11 @@ export function ResultView({
   }, [anyWaiting, refresh]);
 
   async function unlock() {
+    const withPrd = prdLocked.length > 0;
     setConfirmOpen(false);
     setTab("tasks");
     const ok = await generatePaidDocs();
-    if (ok) toast.success("작업 단계와 CLAUDE.md가 열렸어요");
+    if (ok) toast.success(withPrd ? "PRD 전체와 작업 단계·CLAUDE.md가 열렸어요" : "작업 단계와 CLAUDE.md가 열렸어요");
   }
 
   function askUnlock() {
@@ -349,9 +362,12 @@ export function ResultView({
   const allReady = DOC_KINDS.every((k) => docs[k].status === "ready");
   const isLocked = (kind: DocKind) =>
     kind !== "prd" && !unlocked && docs[kind].status !== "generating" && docs[kind].status !== "failed";
+  // 잠금 해제 전 PRD 의 잠긴 장 제목 (비어 있으면 PRD 전체가 보임)
+  const prdLocked = docs.prd.status === "ready" ? (docs.prd.lockedTitles ?? []) : [];
   const active = docs[tab];
   const activeFile = DOC_FILES[tab];
-  const showTools = active.status === "ready" && !isLocked(tab);
+  const previewOnly = tab === "prd" && prdLocked.length > 0;
+  const showTools = active.status === "ready" && !isLocked(tab) && !previewOnly;
   const oneShotView = unlocked && mode === "oneshot";
 
   function moveTab(e: React.KeyboardEvent, kind: DocKind) {
@@ -439,6 +455,11 @@ export function ResultView({
               </button>
             ))}
           </div>
+          {previewOnly && (
+            <span className="ml-auto mr-1 hidden shrink-0 font-mono text-[11px] text-ink-4 md:inline">
+              미리보기 · 1~{PRD_PREVIEW_SECTIONS}장
+            </span>
+          )}
           {showTools && (
             <div className="ml-auto flex shrink-0 items-center gap-1">
               <span className="mr-2 hidden font-mono text-[11px] text-ink-4 md:inline">
@@ -453,11 +474,18 @@ export function ResultView({
         </div>
 
         <div className="mt-12 grid gap-[clamp(24px,6vw,96px)] lg:grid-cols-[210px_minmax(0,1fr)]">
-          <Toc kind={tab} doc={active} locked={isLocked(tab)} oneShot={oneShotView} />
+          <Toc
+            kind={tab}
+            doc={active}
+            locked={isLocked(tab)}
+            lockedTitles={tab === "prd" ? prdLocked : []}
+            oneShot={oneShotView}
+          />
           <div id={`panel-${tab}`} role="tabpanel" aria-labelledby={`tab-${tab}`} className="min-w-0 max-w-[740px]">
             {isLocked(tab) ? (
               <LockedPreview
-                kind={tab as Exclude<DocKind, "prd">}
+                kind={tab}
+                prdLocked={prdLocked}
                 credits={credits}
                 projectId={projectId}
                 busy={paidBusy}
@@ -483,6 +511,17 @@ export function ResultView({
                 onRewrite={(target) => setRewrite({ kind: tab, target })}
               />
             )}
+            {previewOnly && (
+              <LockedPreview
+                kind="prd"
+                prdLocked={prdLocked}
+                credits={credits}
+                projectId={projectId}
+                busy={paidBusy}
+                onUnlock={askUnlock}
+                isDeveloper={isDeveloper}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -492,8 +531,17 @@ export function ResultView({
           <DialogHeader>
             <DialogTitle className="font-display text-2xl font-light tracking-[-0.03em]">크레딧 1건을 사용할까요?</DialogTitle>
             <DialogDescription>
-              이 프로젝트의 작업 단계와 CLAUDE.md를 만들고 zip 다운로드와 섹션 다시 쓰기 {REWRITES_PER_CREDIT}회를 쓸
-              수 있어요. 한 번 연 프로젝트는 계속 볼 수 있어요.
+              {prdLocked.length > 0 ? (
+                <>
+                  PRD 나머지({lockedChapterRange(prdLocked)})를 열고 작업 단계와 CLAUDE.md를 만들어요. zip 다운로드와 섹션
+                  다시 쓰기 {REWRITES_PER_CREDIT}회도 쓸 수 있어요. 한 번 연 프로젝트는 계속 볼 수 있어요.
+                </>
+              ) : (
+                <>
+                  이 프로젝트의 작업 단계와 CLAUDE.md를 만들고 zip 다운로드와 섹션 다시 쓰기 {REWRITES_PER_CREDIT}회를
+                  쓸 수 있어요. 한 번 연 프로젝트는 계속 볼 수 있어요.
+                </>
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="rounded-xl border px-4 py-3 text-sm">
@@ -546,7 +594,20 @@ type TocItem = { id: string; no: string; label: string };
 
 // 왼쪽 목차: PRD·CLAUDE.md 는 "## 섹션", 작업 단계는 단계 카드로 건너뛴다 (넓은 화면에서만)
 // 원샷 모드의 작업 단계 탭에는 단계 카드가 없어서 목차도 비운다.
-function Toc({ kind, doc, locked, oneShot }: { kind: DocKind; doc: DocUi; locked: boolean; oneShot: boolean }) {
+// 잠금 해제 전 PRD 는 잠긴 장을 자물쇠와 함께 흐리게 보여 준다 (누를 수 없음).
+function Toc({
+  kind,
+  doc,
+  locked,
+  lockedTitles,
+  oneShot,
+}: {
+  kind: DocKind;
+  doc: DocUi;
+  locked: boolean;
+  lockedTitles: string[];
+  oneShot: boolean;
+}) {
   const items = useMemo<TocItem[]>(() => {
     if (locked || !doc.content) return [];
     if (kind === "tasks") {
@@ -573,7 +634,7 @@ function Toc({ kind, doc, locked, oneShot }: { kind: DocKind; doc: DocUi; locked
 
   return (
     <nav aria-label="목차" className="hidden self-start lg:sticky lg:top-[calc(3.5rem+28px)] lg:block">
-      {items.length > 0 && (
+      {items.length + lockedTitles.length > 0 && (
         <>
           <span className="mono-label mb-3 block text-[10px] text-ink-4">
             {kind === "tasks" ? `Steps · ${items.length}` : "Contents"}
@@ -593,6 +654,19 @@ function Toc({ kind, doc, locked, oneShot }: { kind: DocKind; doc: DocUi; locked
                 </a>
               </li>
             ))}
+            {lockedTitles.map((title) => {
+              const parts = splitHeadingNumber(title.replace(/[*_`]/g, ""));
+              return (
+                <li
+                  key={title}
+                  className="grid grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-x-1 py-[7px] text-[13.5px] text-ink-4"
+                >
+                  <span className="font-mono text-[11px]">{parts?.no ?? "··"}</span>
+                  <span className="truncate">{parts?.rest ?? title.replace(/[*_`]/g, "")}</span>
+                  <Lock className="size-[11px]" aria-label="잠김" />
+                </li>
+              );
+            })}
           </ul>
         </>
       )}
@@ -680,7 +754,6 @@ function DocPanel({
   }
 
   if (doc.status === "failed" || doc.status === "missing") {
-    const noRetry = doc.errorCode === "free_limit";
     return (
       <div className="rounded-2xl border p-6">
         <p className="flex items-start gap-2 text-sm">
@@ -693,11 +766,9 @@ function DocPanel({
               <Link href={`/credits?next=${encodeURIComponent(`/p/${projectId}`)}`}>크레딧 구매하기</Link>
             </Button>
           ) : (
-            !noRetry && (
-              <Button size="sm" onClick={onRetry}>
-                <RotateCcw /> 다시 시도
-              </Button>
-            )
+            <Button size="sm" onClick={onRetry}>
+              <RotateCcw /> 다시 시도
+            </Button>
           )}
         </div>
       </div>

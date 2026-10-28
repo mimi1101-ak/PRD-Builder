@@ -1,6 +1,14 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { toChatMessage, type DocKind, type DocumentRow, type MessageRow } from "@/lib/domain";
+import {
+  PRD_PREVIEW_SECTIONS,
+  toChatMessage,
+  type DocKind,
+  type DocumentRow,
+  type MessageRow,
+  type ProjectRow,
+} from "@/lib/domain";
+import { splitPrdPreview } from "@/lib/markdown";
 
 export async function loadMessages(projectId: string) {
   const admin = createAdminClient();
@@ -34,7 +42,22 @@ export type DocState = {
   content: string;
   rewriteCount: number;
   updatedAt: string;
+  // PRD 를 잠금 해제 전에 보낼 때만: 잠긴 장의 제목 ("4. 사용자 흐름" …). 내용은 보내지 않는다.
+  lockedTitles?: string[];
 };
+
+// 잠금 해제했거나 미리보기 전에 받은 PRD 면 전체를 본다
+export function prdOpen(project: Pick<ProjectRow, "unlocked" | "prd_free">) {
+  return project.unlocked || project.prd_free;
+}
+
+// 결제 전 PRD 는 앞 장만 브라우저로 보낸다
+export function toPrdState(row: DocumentRow | undefined, open: boolean): DocState | null {
+  const state = toDocState(row);
+  if (!state || open) return state;
+  const { preview, lockedTitles } = splitPrdPreview(state.content, PRD_PREVIEW_SECTIONS);
+  return { ...state, content: preview, lockedTitles };
+}
 
 export function toDocState(row: DocumentRow | undefined): DocState | null {
   if (!row) return null;

@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Lock } from "lucide-react";
+import { Loader2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Markdown } from "@/components/markdown";
+import { Markdown, splitHeadingNumber } from "@/components/markdown";
 import { PRODUCTS, REWRITES_PER_CREDIT, type DocKind } from "@/lib/domain";
+import { cn } from "@/lib/utils";
 
 // 실제 내용이 아닌 "생김새"만 보여 주는 흐린 미리보기
 const SAMPLE: Record<Exclude<DocKind, "prd">, string> = {
@@ -42,15 +43,39 @@ const SAMPLE: Record<Exclude<DocKind, "prd">, string> = {
 - …`,
 };
 
+// 잠긴 PRD 장은 제목만 안다. 흐린 미리보기는 그 제목에 빈 줄만 붙인다.
+function prdSample(titles: string[]) {
+  return titles
+    .slice(0, 3)
+    .map((t) => `## ${t}\n1. 이 장의 내용은 잠금 해제 후에 보여요 …\n2. …………………………\n3. ……………`)
+    .join("\n\n");
+}
+
+function chapterNos(titles: string[]) {
+  const nos = titles.map((t) => splitHeadingNumber(t.replace(/[*_`]/g, ""))?.no);
+  return nos.every(Boolean) ? (nos as string[]) : null;
+}
+
+// "4~9장" (번호가 없으면 "6개 장")
+export function lockedChapterRange(titles: string[]) {
+  const nos = chapterNos(titles);
+  if (!nos) return `${titles.length}개 장`;
+  const [first, last] = [Number(nos[0]), Number(nos[nos.length - 1])];
+  return first === last ? `${first}장` : `${first}~${last}장`;
+}
+
 export function LockedPreview({
   kind,
+  prdLocked,
   credits,
   projectId,
   onUnlock,
   busy,
   isDeveloper = false,
 }: {
-  kind: Exclude<DocKind, "prd">;
+  kind: DocKind;
+  // 잠긴 PRD 장 제목. 비어 있으면 PRD 는 이미 다 보이는 프로젝트(미리보기 전에 만든 PRD)
+  prdLocked: string[];
   credits: number;
   projectId: string;
   onUnlock: () => void;
@@ -58,42 +83,78 @@ export function LockedPreview({
   // 개발자 계정은 크레딧과 상관없이 바로 연다 (서버에서도 차감하지 않음)
   isDeveloper?: boolean;
 }) {
+  const withPrd = prdLocked.length > 0;
+  const nos = chapterNos(prdLocked);
+  const prdPerk = nos ? `PRD ${lockedChapterRange(prdLocked)}` : `PRD 나머지 ${lockedChapterRange(prdLocked)}`;
   const perks = [
+    ...(withPrd ? [{ label: prdPerk, meta: `${prdLocked.length} sections` }] : []),
     { label: "작업 단계 8~15개 + CLAUDE.md", meta: "2 files" },
     { label: "한 번에 끝까지 만드는 원샷 프롬프트", meta: "+ 1" },
     { label: "세 파일 한 번에 받기", meta: ".zip" },
     { label: "섹션 다시 쓰기", meta: `× ${REWRITES_PER_CREDIT}` },
   ];
+  const description =
+    kind === "prd"
+      ? `화면 목록, 데이터 구조, 기술 스택까지 PRD 나머지 ${prdLocked.length}개 장과 클로드 코드에 붙여 넣을 작업 단계·CLAUDE.md를 함께 열어요.`
+      : withPrd
+        ? `크레딧 1건으로 ${prdPerk}과 단계별 프롬프트, 규칙 파일(CLAUDE.md)을 함께 열어요.`
+        : "클로드 코드에 순서대로 붙여 넣기만 하면 되는 단계별 프롬프트와 규칙 파일을 만들어 드려요.";
+
   return (
-    <div className="relative min-h-[640px]">
+    <div
+      className={cn(
+        "relative",
+        withPrd ? "min-h-[780px] sm:min-h-[720px]" : "min-h-[640px]",
+        kind === "prd" && "mt-14",
+      )}
+    >
       <div aria-hidden className="pointer-events-none select-none opacity-45 blur-[7px]">
-        <Markdown>{SAMPLE[kind]}</Markdown>
+        <Markdown>{kind === "prd" ? prdSample(prdLocked) : SAMPLE[kind]}</Markdown>
       </div>
-      <div className="absolute inset-x-0 top-16 flex justify-center px-1 sm:top-24">
-        <div className="w-full max-w-[460px] rounded-[20px] border border-foreground bg-background px-[30px] pb-[26px] pt-[30px] shadow-[0_40px_90px_-40px_rgba(0,0,0,0.35)]">
+      <div className="absolute inset-x-0 top-9 flex justify-center px-1 sm:top-16">
+        <div className="w-full max-w-[460px] rounded-[20px] border border-foreground bg-background px-5 pb-[22px] pt-6 shadow-[0_40px_90px_-40px_rgba(0,0,0,0.35)] sm:px-[30px] sm:pb-[26px] sm:pt-[30px]">
           <p className="mono-label flex items-center gap-2 text-muted-foreground">
             <Lock className="size-3" /> Locked
+            {kind === "prd" && nos && ` · ${nos[0]} — ${nos[nos.length - 1]}`}
           </p>
-          <h3 className="mt-3.5 font-display text-[28px] font-light leading-tight tracking-[-0.03em]">
-            작업 단계와 CLAUDE.md 열기
+          <h3 className="mt-3.5 break-keep font-display text-[25px] font-light leading-tight tracking-[-0.03em] sm:text-[28px]">
+            {withPrd ? "PRD 나머지와 작업 단계 열기" : "작업 단계와 CLAUDE.md 열기"}
           </h3>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            클로드 코드에 순서대로 붙여 넣기만 하면 되는 단계별 프롬프트와 규칙 파일을 만들어 드려요.
-          </p>
+          <p className="mt-2 break-keep text-sm leading-relaxed text-muted-foreground">{description}</p>
+          {kind === "prd" && (
+            <ul aria-label="잠긴 장" className="mt-4 flex flex-wrap gap-1.5">
+              {prdLocked.map((title) => {
+                const parts = splitHeadingNumber(title.replace(/[*_`]/g, ""));
+                return (
+                  <li
+                    key={title}
+                    className="inline-flex h-[26px] items-center gap-1.5 rounded-full border border-line-strong px-2.5 text-[12.5px] text-ink-2"
+                  >
+                    {parts && <span className="font-mono text-[10px] text-muted-foreground">{parts.no}</span>}
+                    {parts?.rest ?? title.replace(/[*_`]/g, "")}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
           <ul className="mb-[22px] mt-5 border-t">
             {perks.map((p) => (
               <li key={p.label} className="flex justify-between gap-3 border-b py-[11px] text-sm">
                 <span>{p.label}</span>
-                <span className="mono-label text-[10.5px] text-muted-foreground">{p.meta}</span>
+                <span className="mono-label whitespace-nowrap text-[10.5px] text-muted-foreground">{p.meta}</span>
               </li>
             ))}
           </ul>
-          {isDeveloper ? (
-            <Button onClick={onUnlock} disabled={busy} size="lg" className="h-12 w-full">
+          {busy ? (
+            <Button disabled size="lg" className="h-12 w-full">
+              <Loader2 className="animate-spin" /> 작업 단계를 만드는 중이에요
+            </Button>
+          ) : isDeveloper ? (
+            <Button onClick={onUnlock} size="lg" className="h-12 w-full">
               바로 열기 — 크레딧 무제한
             </Button>
           ) : credits > 0 ? (
-            <Button onClick={onUnlock} disabled={busy} size="lg" className="h-12 w-full">
+            <Button onClick={onUnlock} size="lg" className="h-12 w-full">
               크레딧 1건으로 열기 — 남은 크레딧 {credits}
             </Button>
           ) : (
@@ -104,7 +165,11 @@ export function LockedPreview({
             </Button>
           )}
           <p className="mono-label mt-3 text-center text-[10px] text-ink-4">
-            {isDeveloper ? "개발자 계정은 크레딧이 차감되지 않아요" : "문서 생성에 실패하면 크레딧은 차감되지 않아요"}
+            {busy && withPrd
+              ? "CLAUDE.md가 만들어지면 PRD 나머지도 바로 열려요"
+              : isDeveloper
+                ? "개발자 계정은 크레딧이 차감되지 않아요"
+                : "문서 생성에 실패하면 크레딧은 차감되지 않아요"}
           </p>
         </div>
       </div>

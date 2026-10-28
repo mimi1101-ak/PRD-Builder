@@ -1,11 +1,12 @@
 import { getProjectForViewer, getViewer } from "@/lib/access";
 import { withErrors } from "@/lib/route";
 import { jsonError } from "@/lib/ndjson";
-import { loadCredits, loadDocuments, toDocState } from "@/lib/projects";
+import { loadCredits, loadDocuments, prdOpen, toDocState, toPrdState } from "@/lib/projects";
 import { isAdmin } from "@/lib/admin";
 import { REWRITES_PER_CREDIT, UNLIMITED_REWRITES, toProjectView } from "@/lib/domain";
 
-// 결과 화면 새로고침용: 문서 3종의 상태와 내용. 잠금 해제 전에는 작업 단계·CLAUDE.md 내용을 보내지 않는다.
+// 결과 화면 새로고침용: 문서 3종의 상태와 내용.
+// 잠금 해제 전에는 PRD 는 앞 장만, 작업 단계·CLAUDE.md 는 내용을 보내지 않는다.
 async function handleGET(request: Request) {
   const projectId = new URL(request.url).searchParams.get("projectId") ?? "";
   const viewer = await getViewer();
@@ -18,7 +19,7 @@ async function handleGET(request: Request) {
   return Response.json({
     project: toProjectView(project),
     documents: {
-      prd: toDocState(docs.prd),
+      prd: toPrdState(docs.prd, prdOpen(project)),
       tasks: project.unlocked ? toDocState(docs.tasks) : null,
       claude_md: project.unlocked ? toDocState(docs.claude_md) : null,
     },
