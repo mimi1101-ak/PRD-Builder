@@ -34,6 +34,8 @@ export async function GET(request: Request) {
     console.error("[auth] exchange failed", error);
   }
 
-  const reason = searchParams.get("error_description") ?? "로그인에 실패했어요.";
-  return NextResponse.redirect(`${origin}/login?next=${encodeURIComponent(next)}&error=${encodeURIComponent(reason)}`);
+  // 구글·카카오가 붙여 보내는 오류 문구는 화면에 그대로 쓰지 않는다 (주소만 바꿔 아무 글이나 띄울 수 있어서). 기록만 남긴다.
+  const providerError = searchParams.get("error_description");
+  if (providerError) console.error("[auth] provider error", providerError.slice(0, 200));
+  return NextResponse.redirect(`${origin}/login?next=${encodeURIComponent(next)}&error=oauth`);
 }

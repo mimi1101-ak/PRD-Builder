@@ -8,10 +8,19 @@ import { Input } from "@/components/ui/input";
 
 export const metadata = { title: "로그인" };
 
+// 주소창의 error 는 정해 둔 코드만 받는다. 주소에 쓴 글이 그대로 화면에 뜨면 가짜 안내문을 띄울 수 있어서.
+// 코드는 app/auth/callback(oauth)·app/auth/password(missing, invalid) 가 붙인다.
+const LOGIN_ERRORS: Record<string, string> = {
+  oauth: "로그인에 실패했어요.",
+  missing: "이메일과 비밀번호를 입력해 주세요.",
+  invalid: "이메일 또는 비밀번호가 맞지 않아요.",
+};
+
 export default async function LoginPage(props: PageProps<"/login">) {
   const searchParams = await props.searchParams;
   const next = safeNextPath(typeof searchParams.next === "string" ? searchParams.next : null, "/projects");
-  const error = typeof searchParams.error === "string" ? searchParams.error : null;
+  const errorCode = typeof searchParams.error === "string" ? searchParams.error : null;
+  const error = errorCode ? (Object.hasOwn(LOGIN_ERRORS, errorCode) ? LOGIN_ERRORS[errorCode] : LOGIN_ERRORS.oauth) : null;
   const mode = typeof searchParams.mode === "string" ? searchParams.mode : null;
 
   const viewer = await getViewer();

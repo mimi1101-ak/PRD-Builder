@@ -69,6 +69,14 @@
    - 크레딧 1건 = PRD 나머지 + 작업 단계 + CLAUDE.md. 첫 유료 문서(CLAUDE.md)가 만들어지는 순간 차감·잠금 해제되고 PRD 전체가 함께 열린다.
    - 이 변경 전에 만든 PRD 는 `projects.prd_free = true` 로 계속 전체 공개. 새 가입 크레딧 0건(기존 잔액 그대로).
    - 확인: 임시 견본 페이지로 잠김(크레딧 0·있음)·확인 창·TASKS 카드·예전 PRD·375px 확인, 잠긴 장 내용이 HTML 에 없는 것 확인. **배포 후 실제 계정으로 새 PRD 생성 → 잠금 해제까지 한 번 더 확인할 것.**
+11. **보안 1단계** (2026-10-28, 런칭 보안 심사 후속. 심사 보고서는 저장소 밖 `../dot.PRD 런칭 보안 심사 (2026-10-28).md`)
+   - 마이그레이션 `20261028100000_documents_server_only.sql`: 로그인 사용자의 documents·messages 읽기 권한과 정책을 없앰(앱은 서버 키로만 읽는다. 잠금 전 PRD 전문이 DB 에서 직접 새지 않게), 닉네임 40자 제한. SQL Editor 로 직접 적용한다.
+   - Next.js 16.4.3(보안 패치)·zod 4.6.7, shadcn 은 devDependencies 로 옮김. 운영 의존성 알려진 취약점 0건(`npm audit --omit=dev`).
+   - 이동 주소 검사 `safeNextPath`(lib/access.ts): 탭·줄바꿈·백슬래시가 든 주소는 받지 않고, 주소를 풀어 봐도 우리 사이트 안인지 확인. `/auth/password`·`/auth/signout` 은 다른 사이트에서 온 요청이면 403(`isCrossOrigin`).
+   - 로그인·결제 실패 화면은 주소의 문구를 그대로 쓰지 않고 코드로 정해 둔 문구만 보여 준다(`LOGIN_ERRORS`, `FAIL_MESSAGES`).
+   - 보안 헤더(`next.config.ts`): 액자 금지(X-Frame-Options·frame-ancestors), nosniff, Referrer-Policy, Permissions-Policy, X-Powered-By 숨김.
+   - 확인: 개발 서버에서 헤더 5개, 위험한 next 주소 4종 → /projects, 다른 출처 로그인·로그아웃 403·같은 출처 정상, 가짜 문구 안 보임, 페이지 11개·API 응답 정상, tsc·lint·build 통과. **배포 후 실제 계정으로 로그인·로그아웃과 토스 결제창이 열리는지 한 번 확인할 것.**
+   - 남은 일: 보고서 10장의 코드 2단계(비용 방어)·3단계(에러 알림, 크레딧 원장·환불, 탈퇴), 문서(처리방침·약관·SEO), 사장님 결정(요금제, 통신판매업, 도메인).
 
 ## 알아 둘 것
 

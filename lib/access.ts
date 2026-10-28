@@ -69,10 +69,26 @@ export async function claimGuestProjects(userId: string, guestToken: string) {
     .is("user_id", null);
 }
 
-// 다른 페이지로 보낼 때 외부 주소로 새지 않게 내부 경로만 허용
+// 다른 페이지로 보낼 때 외부 주소로 새지 않게 내부 경로만 허용.
+// 브라우저는 주소 속 탭·줄바꿈을 지우고 \ 를 / 로 읽는다 ("/\t/evil.com" → "//evil.com" = 외부 사이트).
+// 그래서 이런 글자가 든 주소는 받지 않고, 실제로 주소를 풀어 봐도 우리 사이트 안인지 한 번 더 확인한다.
+const NEXT_BASE = "https://dot.invalid";
 export function safeNextPath(next: string | null | undefined, fallback = "/") {
-  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) {
+  if (!next || !next.startsWith("/") || next.startsWith("//") || /[\\\u0000-\u001f\u007f]/.test(next)) {
+    return fallback;
+  }
+  try {
+    if (new URL(next, NEXT_BASE).origin !== NEXT_BASE) return fallback;
+  } catch {
     return fallback;
   }
   return next;
+}
+
+// 다른 사이트의 폼이 보낸 요청인지 (로그인 CSRF: 남의 사이트가 방문자를 몰래 다른 계정으로 로그인·로그아웃시키는 것).
+// 브라우저는 POST 요청에 Origin 을 붙인다. 없으면 Sec-Fetch-Site 로 보고, 둘 다 없으면(브라우저가 아님) 막지 않는다.
+export function isCrossOrigin(request: Request) {
+  const origin = request.headers.get("origin");
+  if (origin) return origin !== new URL(request.url).origin;
+  return request.headers.get("sec-fetch-site") === "cross-site";
 }
