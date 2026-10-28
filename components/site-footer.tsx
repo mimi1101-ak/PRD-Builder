@@ -13,7 +13,8 @@ export function SiteFooter() {
           <Link href="/terms" className="hover:text-foreground">
             이용약관
           </Link>
-          <Link href="/privacy" className="hover:text-foreground">
+          {/* 개인정보처리방침은 다른 링크와 구분되게 진하게 (개인정보 처리방침 작성지침) */}
+          <Link href="/privacy" className="font-medium text-foreground">
             개인정보처리방침
           </Link>
           <Link href="/refund" className="hover:text-foreground">

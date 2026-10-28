@@ -1,4 +1,4 @@
-// 사업자 정보. 사업자등록증과 글자 하나까지 같아야 한다 (결제 심사). 푸터·이용약관에서 쓴다.
+// 사업자 정보. 사업자등록증과 글자 하나까지 같아야 한다 (결제 심사). 푸터·이용약관·개인정보처리방침에서 쓴다.
 // 빈 값은 화면에 나오지 않는다.
 export const BUSINESS = {
   name: "미야 스튜디오 (MIYA STUDIO)",
@@ -8,6 +8,7 @@ export const BUSINESS = {
   address: "충청북도 청주시 청원구 수암로88번길 13, 201호(우암동)",
   phone: "010-3743-8751",
   email: "heeyoung1101yang@naver.com",
+  hosting: "Vercel Inc.", // 호스팅 제공자 (전자상거래법 시행령 표시 항목)
 } as const;
 
 export const BUSINESS_FIELDS: { label: string; value: string }[] = [
@@ -18,4 +19,5 @@ export const BUSINESS_FIELDS: { label: string; value: string }[] = [
   { label: "주소", value: BUSINESS.address },
   { label: "전화", value: BUSINESS.phone },
   { label: "이메일", value: BUSINESS.email },
+  { label: "호스팅 제공자", value: BUSINESS.hosting },
 ].filter((f) => f.value);

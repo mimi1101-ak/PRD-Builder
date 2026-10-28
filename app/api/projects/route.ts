@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { z } from "zod";
 import { withErrors } from "@/lib/route";
 import { ensureGuestToken, getViewer } from "@/lib/access";
@@ -86,6 +87,15 @@ async function handlePOST(request: Request) {
     await admin.from("projects").delete().eq("id", project.id);
     return jsonError(500, "프로젝트를 만들지 못했어요. 다시 시도해 주세요.");
   }
+
+  // 보관 기간이 지난 데이터 정리 (개인정보처리방침: 로그인 안 한 프로젝트 30일, 로그인 기록 3개월).
+  // 하루 한 번, 응답을 보낸 뒤에 한다 (supabase/migrations/20261028300000_cleanup_expired_data.sql)
+  after(async () => {
+    if (!(await hitRateLimit("cleanup:daily", 1, "1 day"))) return;
+    const { data, error: cleanupError } = await admin.rpc("cleanup_expired_data");
+    if (cleanupError) console.error("[cleanup] failed", cleanupError.message);
+    else console.log("[cleanup]", data);
+  });
 
   return Response.json({ id: project.id });
 }
