@@ -3,7 +3,15 @@ import { withErrors } from "@/lib/route";
 import { ensureGuestToken, getViewer } from "@/lib/access";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { jsonError } from "@/lib/ndjson";
-import { EXPERIENCES, MAX_INPUT_LENGTH, TOOLS, emptyCoverage, emptySummary } from "@/lib/domain";
+import { clientIpKey, hitRateLimit } from "@/lib/rate-limit";
+import {
+  EXPERIENCES,
+  GUEST_PROJECTS_PER_10_MIN,
+  MAX_INPUT_LENGTH,
+  TOOLS,
+  emptyCoverage,
+  emptySummary,
+} from "@/lib/domain";
 
 const CreateSchema = z.object({
   idea: z.string().trim().min(1).max(MAX_INPUT_LENGTH),
@@ -25,6 +33,17 @@ async function handlePOST(request: Request) {
   const { idea, tool, experience } = parsed.data;
 
   const viewer = await getViewer();
+  // 로그인 안 한 사용자는 쿠키를 지우면 새 사람이 되므로 IP 로도 센다 (AI 비용 폭주 막기)
+  if (
+    !viewer.userId &&
+    !(await hitRateLimit(`guest_project:${clientIpKey(request)}`, GUEST_PROJECTS_PER_10_MIN, "10 minutes"))
+  ) {
+    return jsonError(
+      429,
+      "로그인 없이 만들 수 있는 아이디어 수를 넘었어요. 로그인하거나 10분 뒤에 다시 시도해 주세요.",
+      "rate_limited",
+    );
+  }
   const owner = viewer.userId
     ? { user_id: viewer.userId, guest_token: null }
     : { user_id: null, guest_token: await ensureGuestToken(viewer) };

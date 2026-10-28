@@ -9,7 +9,8 @@ import { checkTasks } from "@/lib/doc-check";
 import { loadCredits, loadDocuments, loadMessages, prdOpen } from "@/lib/projects";
 import { isAdmin } from "@/lib/admin";
 import { splitPrdPreview, streamingPrdPreview } from "@/lib/markdown";
-import { PRD_PREVIEW_SECTIONS, normalizeCoverage, normalizeSummary, type DocKind } from "@/lib/domain";
+import { hitRateLimit } from "@/lib/rate-limit";
+import { PRD_PER_DAY, PRD_PREVIEW_SECTIONS, normalizeCoverage, normalizeSummary, type DocKind } from "@/lib/domain";
 
 // 문서는 상위 모델로 길게 쓰므로 넉넉히
 export const maxDuration = 300;
@@ -20,7 +21,7 @@ const GenerateSchema = z.object({
 });
 
 // 문서 만들기 (PRD 7장 ②)
-// - PRD: 무료, 개수 제한 없음. 전체를 만들어 저장하고, 잠금 해제 전에는 앞 장만 브라우저로 보낸다
+// - PRD: 무료, 계정당 하루 PRD_PER_DAY 개까지(개발자 제외). 전체를 만들어 저장하고, 잠금 해제 전에는 앞 장만 브라우저로 보낸다
 // - 작업 단계·CLAUDE.md: 처음 열 때(첫 유료 문서 생성 성공 시점)에 크레딧 1 차감 + 잠금 해제 → PRD 나머지도 열린다
 // - 실패한 생성은 크레딧을 차감하지 않는다
 // - 개발자 계정은 잠금 해제 때 크레딧이 차감되지 않는다 (unlock_project 안에서 처리)
@@ -52,6 +53,11 @@ async function handlePOST(request: Request) {
     if (!project.unlocked && !isDeveloper && (await loadCredits(userId)) < 1) {
       return jsonError(402, "크레딧이 필요해요.", "no_credit");
     }
+  }
+
+  // PRD 는 무료라 하루 생성 수를 막아 둔다 (한국 시간 0시에 다시 채워짐). 실패한 시도도 비용이 들어 함께 센다
+  if (kind === "prd" && !isDeveloper && !(await hitRateLimit(`prd_daily:${userId}`, PRD_PER_DAY, "1 day"))) {
+    return jsonError(429, `PRD는 하루 ${PRD_PER_DAY}개까지 만들 수 있어요. 내일 다시 만들어 주세요.`, "daily_limit");
   }
 
   const admin = createAdminClient();

@@ -77,10 +77,18 @@
    - 보안 헤더(`next.config.ts`): 액자 금지(X-Frame-Options·frame-ancestors), nosniff, Referrer-Policy, Permissions-Policy, X-Powered-By 숨김.
    - 확인: 개발 서버에서 헤더 5개, 위험한 next 주소 4종 → /projects, 다른 출처 로그인·로그아웃 403·같은 출처 정상, 가짜 문구 안 보임, 페이지 11개·API 응답 정상, tsc·lint·build 통과. **배포 후 실제 계정으로 로그인·로그아웃과 토스 결제창이 열리는지 한 번 확인할 것.**
    - 남은 일: 보고서 10장의 코드 2단계(비용 방어)·3단계(에러 알림, 크레딧 원장·환불, 탈퇴), 문서(처리방침·약관·SEO), 사장님 결정(요금제, 통신판매업, 도메인).
+12. **보안 2단계: AI 비용 방어** (2026-10-28, 마이그레이션 `20261028200000_rate_limits.sql`)
+   - 로그인 안 한 사용자: IP 기준 10분에 새 프로젝트 5개(`GUEST_PROJECTS_PER_10_MIN`)·대화 30턴(`GUEST_TURNS_PER_10_MIN`). 쿠키를 지우면 새 사람이 되므로 IP 로 센다. 로그인 사용자는 IP 로 막지 않는다(통신사·카페 와이파이는 IP 하나를 여럿이 같이 씀).
+   - 로그인 계정: 하루(한국 시간 0시 기준) PRD 생성 10개(`PRD_PER_DAY`), 실패한 시도도 센다. 개발자 계정은 제외.
+   - 세는 곳: `rate_limit_hits` 표 + `hit_rate_limit` 함수(시간 칸마다 원자적으로 +1), `lib/rate-limit.ts`. IP 는 비밀 키를 섞은 해시로만 저장하고, IPv6 는 앞 4칸(/64)으로 묶는다. 이틀 지난 기록은 함수가 가끔 지운다.
+   - DB 확인에 실패하면 막지 않는다(제한 때문에 서비스가 멈추지 않게, 로그 `[rate-limit] check failed`). 그래서 마이그레이션을 적용하기 전에는 제한이 꺼진 상태다.
+   - 확인: PGlite(PC 안 임시 Postgres)로 SQL 시험(5번 허용·6번째 거부, 하루 칸이 한국 0시, 권한, 두 번 실행), IP 묶기 8가지, tsc·lint·build, 개발 서버에서 적용 전 통과(fail-open)와 임시 프로젝트 삭제.
+   - 적용 후 개발 서버: 쿠키를 지우며 새 아이디어 6개 → 6번째 429, 다른 IP(x-real-ip)는 통과, 대화 31번째 429(앞 30번은 AI 없이 '처리 중' 409 로 셈), 다른 IP 대화는 따로 셈. 시험 프로젝트는 모두 삭제. 하루 PRD 10개는 로그인이 필요해 같은 함수 시험으로 대신함.
 
 ## 알아 둘 것
 
 - `.env.local` 은 git 에 올리지 않는다. 비밀 키(Supabase secret, Anthropic)는 이 파일에만 있다.
+- 마이그레이션은 SQL Editor 로 직접 적용한다. 반드시 https://supabase.com/dashboard/project/nxejnobwhfhvkdytjxcm/sql/new 처럼 주소에 프로젝트 id 가 든 화면에서 실행하고, 적용 뒤 `to_regclass`·`has_table_privilege` 같은 확인 SQL 로 결과를 본다 (2026-10-28 에 다른 곳에 실행돼 적용이 늦어진 적 있음).
 - `npm run dev` 는 `--use-system-ca` 로 실행된다. Avast 백신의 HTTPS 검사 때문에 Supabase 연결이 인증서 오류로 실패하던 문제를 막는다.
 - 질문·문서 품질은 `lib/prompts/*.md` 만 고치면 된다 (개발 서버는 저장 즉시 반영).
 - 테스트로 만든 프로젝트 "헬스장 출석 체크", "카페 스탬프"(리디자인 확인용, 질문 1개까지)가 DB 에 남아 있다(게스트 소유, 견본으로 사용 가능).

@@ -6,7 +6,9 @@ import { jsonError, ndjsonResponse } from "@/lib/ndjson";
 import { runInterviewTurn, type TurnResult } from "@/lib/ai/interview";
 import { describeAiError } from "@/lib/ai/client";
 import { loadMessages } from "@/lib/projects";
+import { clientIpKey, hitRateLimit } from "@/lib/rate-limit";
 import {
+  GUEST_TURNS_PER_10_MIN,
   MAX_INPUT_LENGTH,
   MAX_MESSAGES_PER_PROJECT,
   MESSAGES_PER_MINUTE,
@@ -48,6 +50,18 @@ async function handlePOST(request: Request) {
   if (!project) return jsonError(404, "프로젝트를 찾을 수 없어요.");
   if (project.status === "done") {
     return jsonError(409, "이미 문서를 만든 프로젝트예요. 결과 화면에서 확인해 주세요.", "done");
+  }
+
+  // 로그인 안 한 사용자의 대화는 IP 로도 센다 (쿠키를 지우면 새 사람이 되므로)
+  if (
+    !viewer.userId &&
+    !(await hitRateLimit(`guest_chat:${clientIpKey(request)}`, GUEST_TURNS_PER_10_MIN, "10 minutes"))
+  ) {
+    return jsonError(
+      429,
+      "로그인 없이 할 수 있는 대화 수를 넘었어요. 로그인하거나 10분 뒤에 다시 시도해 주세요.",
+      "rate_limited",
+    );
   }
 
   const admin = createAdminClient();

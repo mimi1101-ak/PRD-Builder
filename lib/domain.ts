@@ -185,12 +185,18 @@ export const MAX_QUESTIONS = 10;
 export const DONT_KNOW_MESSAGE = "잘 모르겠어요. 추천해 주세요.";
 
 // 요금·제한 (PRD 8·9장)
-// 인터뷰·PRD 생성은 무제한 무료. 잠금 해제(크레딧 1건) 전에는 PRD 앞 3장(개요·대상 사용자·핵심 기능)만 보여 준다.
+// 인터뷰·PRD 생성은 무료(PRD 는 하루 PRD_PER_DAY 개까지). 잠금 해제(크레딧 1건) 전에는 PRD 앞 3장(개요·대상 사용자·핵심 기능)만 보여 준다.
 export const PRD_PREVIEW_SECTIONS = 3;
 export const REWRITES_PER_CREDIT = 3;
 export const MESSAGES_PER_MINUTE = 20;
 export const MAX_MESSAGES_PER_PROJECT = 80;
 export const MAX_INPUT_LENGTH = 2000;
+
+// 남용 방지 (lib/rate-limit.ts). 로그인 안 한 사용자는 쿠키를 지우면 새 사람이 되므로 IP 로 센다.
+export const GUEST_PROJECTS_PER_10_MIN = 5;
+export const GUEST_TURNS_PER_10_MIN = 30;
+// 로그인 계정의 하루(한국 시간) PRD 생성 수. 개발자 계정은 제외
+export const PRD_PER_DAY = 10;
 
 // 개발자 계정의 다시 쓰기 남은 횟수 (사실상 무제한)
 export const UNLIMITED_REWRITES = 9999;
