@@ -387,6 +387,8 @@ export function ResultView({
           <div className="min-w-0">
             <p className="mono-label flex gap-3.5 text-muted-foreground">
               <span>Result</span>
+              {/* 결과물이 생성형 AI 로 만든 것임을 표시 (AI 기본법, 약관 제6조) */}
+              <span>AI 생성</span>
               <span>{formatDate(project.createdAt)}</span>
             </p>
             <h1 className="display-title mt-4 break-keep text-[clamp(40px,6vw,80px)]">{project.title}</h1>
@@ -546,7 +548,11 @@ export function ResultView({
           </DialogHeader>
           <div className="rounded-xl border px-4 py-3 text-sm">
             남은 크레딧 <b>{credits}건</b> → <b>{Math.max(0, credits - 1)}건</b>
-            <p className="mt-1 text-xs text-muted-foreground">문서 생성에 실패하면 크레딧은 차감되지 않아요.</p>
+            {/* 디지털 콘텐츠 청약철회 제한 안내 (약관 제8조 2항) */}
+            <p className="mt-1 text-xs text-muted-foreground">
+              <b className="font-medium text-foreground">사용한 크레딧은 환불되지 않아요.</b> 문서 생성에 실패하면 크레딧은
+              차감되지 않아요.
+            </p>
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setConfirmOpen(false)}>

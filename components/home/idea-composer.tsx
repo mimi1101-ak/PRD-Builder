@@ -159,6 +159,8 @@ export function IdeaComposer() {
           </button>
         ))}
       </div>
+      {/* 생성형 AI 서비스라는 사실을 미리 알림 (AI 기본법, 약관 제6조) */}
+      <p className="mt-3 text-xs text-muted-foreground">MOMO는 생성형 AI예요. 질문과 문서는 AI가 만들어요.</p>
     </div>
   );
 }

@@ -428,7 +428,7 @@ function AiBubble({ children }: { children: React.ReactNode }) {
     <div className="grid grid-cols-[36px_minmax(0,1fr)] gap-3.5">
       <Momo className="-mt-1 w-9" />
       <div className="min-w-0">
-        <p className="mono-label mb-2 text-muted-foreground">MOMO</p>
+        <p className="mono-label mb-2 text-muted-foreground">MOMO · AI</p>
         {children}
       </div>
     </div>
