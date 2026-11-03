@@ -1,28 +1,35 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUp, Check, ChevronDown, Loader2 } from "lucide-react";
+import { ArrowUp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { EXPERIENCES, MAX_INPUT_LENGTH, TOOLS, type ExperienceValue, type ToolValue } from "@/lib/domain";
+import { MAX_INPUT_LENGTH } from "@/lib/domain";
 import { readJsonError } from "@/lib/ndjson";
+import { useTypewriter } from "@/components/home/use-typewriter";
 
 const EXAMPLES = ["동네 헬스장 출석 체크 앱", "독서 모임 일정·발제 관리 서비스", "1인 카페 단골 스탬프 적립 앱"];
+
+// 입력창이 비어 있을 때 안내 문구 자리에 한 글자씩 써졌다 지워지는 문장. 첫 줄(안내)은 고정, 나머지는 섞어서 돈다
+const PLACEHOLDERS = [
+  "어떤 아이디어를 만들어볼까요? MOMO에게 이야기해주세요",
+  "동네 필라테스 수업 예약 앱을 만들고 싶어요",
+  "직접 만든 도자기를 파는 작은 쇼핑몰이 필요해요",
+  "러닝 크루 기록을 모아 보는 커뮤니티를 만들고 싶어요",
+  "식당 재료가 떨어지기 전에 알려 주는 재고 앱이요",
+  "식단 사진을 올리면 AI가 기록해 주는 앱이요",
+  "학원 숙제를 내고 확인하는 서비스가 필요해요",
+];
+
+// 홈 아래쪽 아이디어 카드에서 보내는 신호. detail 문장을 입력창에 채운다(빈 문장이면 입력창으로 옮기기만)
+export const PICK_IDEA_EVENT = "dotprd:pick-idea";
 
 export function IdeaComposer() {
   const router = useRouter();
   const [idea, setIdea] = useState("");
-  const [tool, setTool] = useState<ToolValue>("claude_code");
-  const [experience, setExperience] = useState<ExperienceValue | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const placeholder = useTypewriter(PLACEHOLDERS, { startFull: true, shuffle: true, active: idea === "", hold: 2600 });
 
   // 예시 칩을 누르면 입력창에 채우고, 바로 Enter 로 보낼 수 있게 입력창으로 커서를 옮긴다
   function pickExample(example: string) {
@@ -35,6 +42,23 @@ export function IdeaComposer() {
     });
   }
 
+  useEffect(() => {
+    function onPick(e: Event) {
+      const text = (e as CustomEvent<string>).detail;
+      const el = inputRef.current;
+      if (!el) return;
+      if (text) setIdea(text);
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      requestAnimationFrame(() => {
+        el.focus({ preventScroll: true });
+        const end = text ? text.length : el.value.length;
+        el.setSelectionRange(end, end);
+      });
+    }
+    window.addEventListener(PICK_IDEA_EVENT, onPick);
+    return () => window.removeEventListener(PICK_IDEA_EVENT, onPick);
+  }, []);
+
   const canSubmit = idea.trim().length > 0 && !submitting;
 
   async function submit() {
@@ -44,7 +68,8 @@ export function IdeaComposer() {
       const res = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idea: idea.trim(), tool, experience }),
+        // 도구·경험은 고르지 않는다. 서버가 클로드 코드·선택 안 함으로 채운다
+        body: JSON.stringify({ idea: idea.trim() }),
       });
       if (!res.ok) {
         const err = await readJsonError(res);
@@ -59,9 +84,6 @@ export function IdeaComposer() {
       setSubmitting(false);
     }
   }
-
-  const toolLabel = TOOLS.find((t) => t.value === tool)?.label;
-  const experienceLabel = EXPERIENCES.find((e) => e.value === experience)?.label;
 
   return (
     <div>
@@ -90,48 +112,10 @@ export function IdeaComposer() {
           maxLength={MAX_INPUT_LENGTH}
           rows={2}
           autoFocus
-          placeholder="어떤 아이디어를 만들어볼까요? MOMO에게 이야기해주세요"
+          placeholder={placeholder}
           className="field-sizing-content block max-h-56 min-h-[92px] w-full resize-none bg-transparent px-[22px] pb-1 pt-5 text-[17px] leading-relaxed outline-none placeholder:text-ink-4"
         />
-        <div className="flex items-center justify-between gap-2 py-2.5 pl-3 pr-2.5">
-          <div className="flex flex-wrap items-center gap-0.5">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button type="button" className={selector}>
-                  <span className="mono-label text-[10px] text-ink-4">도구</span>
-                  {toolLabel}
-                  <ChevronDown className="size-3 text-muted-foreground" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-48">
-                <DropdownMenuLabel>사용할 도구</DropdownMenuLabel>
-                {TOOLS.map((t) => (
-                  <DropdownMenuItem key={t.value} onSelect={() => setTool(t.value)}>
-                    <Check className={t.value === tool ? "opacity-100" : "opacity-0"} />
-                    {t.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button type="button" className={selector}>
-                  <span className="mono-label text-[10px] text-ink-4">경험</span>
-                  {experienceLabel ?? "선택 안 함"}
-                  <ChevronDown className="size-3 text-muted-foreground" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-52">
-                <DropdownMenuLabel>코딩 경험</DropdownMenuLabel>
-                {EXPERIENCES.map((ex) => (
-                  <DropdownMenuItem key={ex.value} onSelect={() => setExperience(ex.value)}>
-                    <Check className={ex.value === experience ? "opacity-100" : "opacity-0"} />
-                    {ex.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+        <div className="flex items-center justify-end gap-2 py-2.5 pl-3 pr-2.5">
           <div className="flex items-center gap-3">
             <span className="mono-label hidden text-[10px] text-ink-4 sm:inline">Enter ↵</span>
             <button
@@ -164,6 +148,3 @@ export function IdeaComposer() {
     </div>
   );
 }
-
-const selector =
-  "inline-flex h-8 items-center gap-2 rounded-full px-2.5 text-[13px] text-ink-2 transition-colors hover:bg-muted data-[state=open]:bg-muted";

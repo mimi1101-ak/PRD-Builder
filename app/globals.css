@@ -213,6 +213,16 @@
   }
 }
 
+/* 홈 결과 미리보기: 지금 보고 있는 탭 아래 막대가 차오르면 다음 탭으로 넘어간다 */
+@keyframes tab-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
 /* 대화의 "생각 중" 픽셀 세 칸 */
 @keyframes thinking {
   0%,
