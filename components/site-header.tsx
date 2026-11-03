@@ -20,8 +20,8 @@ export async function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 h-14 shrink-0 bg-background/80 backdrop-blur-md backdrop-saturate-150">
       <div className="flex h-full items-center justify-between gap-2 px-4 sm:px-8 lg:px-12">
-        <Link href="/" className="flex items-center gap-2.5 text-[15px] font-semibold tracking-tight">
-          <Logo className="size-5" />
+        <Link href="/" className="flex items-center gap-3 text-[19px] font-semibold tracking-tight">
+          <Logo className="size-7" />
           <span>dot.PRD</span>
         </Link>
         <nav className="flex items-center gap-0.5 text-[13.5px] text-ink-2">
