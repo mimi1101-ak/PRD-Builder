@@ -43,7 +43,7 @@ export default function HomePage() {
               <p className="text-center text-[13px] font-semibold text-muted-foreground">&ldquo;PRD가 무엇인가요?&rdquo;</p>
               <p className="mt-3">
                 집을 지을 때 설계도부터 그리듯, 서비스에도 설계도가 필요해요. 그게{" "}
-                <b className="font-semibold text-foreground">PRD(기획서)</b>예요.
+                <b className="font-semibold text-foreground">PRD(제품 요구사항 정의서)</b>예요.
               </p>
               <p className="mt-2">
                 설계도 없이 AI에게 맡기면 매번 다른 집이 지어지거든요. MOMO의 질문에 답하면 클로드 코드·커서에 바로 넣을 수
