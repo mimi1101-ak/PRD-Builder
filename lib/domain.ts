@@ -138,9 +138,12 @@ export const ONE_SHOT_PROMPT = `docs/PRD.md, docs/TASKS.md, CLAUDE.md를 읽어.
   5. 직접 확인할 것: 어떤 화면에서 무엇을 누르면 어떤 결과가 나와야 하는지
   6. 막힌 것과 남은 에러`;
 
-// 원샷 모드 아래 "이렇게 넣으세요" 가이드의 짧은 프롬프트. 사용자가 준 원문에서 말투만 다듬었다.
-export const ONE_SHOT_SHORT_PROMPT = `docs/PRD.md 파일을 보고 Supabase MCP로 DB를 만든 다음, 앱을 완성해 줘.
-오류가 있으면 스스로 검토해서 고치면서 진행하고, 문서를 기준으로 만들어 줘.`;
+// 원샷 모드 아래 "이렇게 넣으세요" 가이드의 짧은 프롬프트. 사용자가 준 원문을 뜻은 그대로 두고 다듬었다.
+// Supabase 프로젝트는 사용자가 폴더와 같은 이름으로 미리 만들어 둔다(가이드 1·2번).
+export const ONE_SHOT_SHORT_PROMPT = `CLAUDE.md와 docs/PRD.md를 읽고, 문서를 기준으로 서비스를 끝까지 완성해 줘.
+- DB는 Supabase MCP로 만들어 줘. 이 폴더와 이름이 같은 Supabase 프로젝트를 써.
+- 만들면서 생기는 오류는 스스로 검토하고 고치면서 진행해 줘.
+- 문서에 없는 기능은 더하지 마.`;
 
 // Supabase 가 안내하는 MCP 서버 주소 (OAuth 로그인으로 연결)
 export const SUPABASE_MCP_URL = "https://mcp.supabase.com/mcp";

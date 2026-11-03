@@ -116,12 +116,14 @@ function CodeBlock({ code }: { code: string }) {
   );
 }
 
-// 도구마다 MCP 를 붙이는 곳이 달라서 2번 안내만 도구에 맞춘다
-function mcpSteps(tool: string): React.ReactNode[] {
+// 도구마다 폴더를 여는 법과 MCP 를 붙이는 곳이 달라서 3번 안내만 도구에 맞춘다.
+// 클로드 코드의 --scope project 연결은 폴더 안(.mcp.json)에 저장되므로 폴더를 만든 다음에 해야 한다.
+function openAndConnectSteps(tool: string): React.ReactNode[] {
   if (tool === "cursor") {
     return [
+      <>커서를 켜고 파일 &gt; 폴더 열기로 2번에서 만든 폴더를 골라요.</>,
       <>
-        프로젝트 폴더에 <code className={inlineCode}>.cursor/mcp.json</code> 파일을 만들고 아래 내용을 넣어요.
+        그 폴더에 <code className={inlineCode}>.cursor/mcp.json</code> 파일을 만들고 아래 내용을 넣어요.
         <CodeBlock code={JSON.stringify({ mcpServers: { supabase: { url: SUPABASE_MCP_URL } } }, null, 2)} />
       </>,
       <>커서 설정 &gt; Tools &amp; MCP에 supabase가 보이면 안내에 따라 브라우저에서 Supabase에 로그인해요.</>,
@@ -130,47 +132,75 @@ function mcpSteps(tool: string): React.ReactNode[] {
   }
   if (tool === "other") {
     return [
+      <>쓰는 도구에서 2번에서 만든 폴더를 열어요.</>,
       <>
-        쓰는 도구의 MCP 설정에 아래 주소를 추가해요.
+        도구의 MCP 설정에 아래 주소를 추가해요.
         <CodeBlock code={SUPABASE_MCP_URL} />
       </>,
-      <>브라우저에 로그인 창이 뜨면 Supabase에 로그인해요.</>,
-      <>1번에서 만든 조직을 고르고 허용하면 연결이 끝나요.</>,
+      <>브라우저에 로그인 창이 뜨면 Supabase에 로그인하고, 1번에서 만든 조직을 고르고 허용하면 연결이 끝나요.</>,
     ];
   }
   return [
     <>
-      받은 세 파일을 넣은 폴더에서 터미널을 열고 아래 명령을 실행해요.
+      2번에서 만든 폴더를 열고 빈 곳을 오른쪽 클릭해 &ldquo;터미널에서 열기&rdquo;를 눌러요. (맥은 폴더를 오른쪽 클릭 &gt;
+      서비스 &gt; &ldquo;폴더에서 새로운 터미널 열기&rdquo;)
+    </>,
+    <>
+      터미널에 아래 명령을 붙여 넣고 실행해요. 이 폴더에서만 쓰는 Supabase 연결이 저장돼요.
       <CodeBlock code={`claude mcp add --scope project --transport http supabase "${SUPABASE_MCP_URL}"`} />
     </>,
     <>
-      <code className={inlineCode}>claude</code>로 클로드 코드를 켜고 <code className={inlineCode}>/mcp</code>를
-      입력해요. supabase를 고르고 Authenticate를 누르면 브라우저가 열려요.
+      같은 터미널에서 <code className={inlineCode}>claude</code>를 입력해 클로드 코드를 켜요. 이 폴더를 쓸지 물으면
+      허용해요.
     </>,
-    <>Supabase에 로그인한 뒤 1번에서 만든 조직을 고르고 허용하면 연결이 끝나요.</>,
+    <>
+      <code className={inlineCode}>/mcp</code>를 입력하고 supabase를 고른 뒤 Authenticate를 누르면 브라우저가 열려요.
+      Supabase에 로그인하고 1번에서 만든 조직을 고르고 허용하면 연결이 끝나요.
+    </>,
   ];
 }
 
-// 원샷 모드: 단계 카드 대신 보여 주는 "이렇게 넣으세요" 가이드. 계정 → MCP 연결 → 짧은 프롬프트 순서.
+// 원샷 모드: 단계 카드 대신 보여 주는 "이렇게 넣으세요" 가이드.
+// Supabase 프로젝트 → 같은 이름의 폴더에 문서 넣기 → 도구에서 폴더 열고 MCP 연결 → 짧은 프롬프트 순서.
 export function OneShotGuide({ tool }: { tool: string }) {
   const name = toolName(tool);
   const guide: { title: string; items: React.ReactNode[] }[] = [
     {
-      title: "Supabase 계정 만들기",
+      title: "Supabase에서 프로젝트 만들기",
       items: [
         <>
           <a href="https://supabase.com" target="_blank" rel="noreferrer" className="underline underline-offset-4">
             supabase.com
           </a>
-          에서 Start your project를 누르고 GitHub나 이메일로 가입해요.
+          에서 Start your project를 누르고 GitHub나 이메일로 가입해요. 조직(Organization) 이름은 아무거나, 플랜은
+          Free를 골라요.
         </>,
-        <>조직(Organization)을 만들라고 나오면 이름은 아무거나 쓰고 플랜은 Free를 골라요.</>,
-        <>프로젝트는 미리 만들지 않아도 돼요. AI가 MCP로 만들어요.</>,
+        <>
+          New project를 눌러 프로젝트를 만들어요. 이름은 영어 소문자와 - 만 써요(예:{" "}
+          <code className={inlineCode}>gym-check</code>). 2번에서 만들 폴더 이름과 똑같이 써야 AI가 이 프로젝트를 찾아요.
+        </>,
+        <>Database Password는 Generate로 만들고 따로 적어 두세요. Region은 Northeast Asia (Seoul)를 골라요.</>,
+        <>프로젝트가 준비되기까지 1~2분 걸려요. 준비 중 표시가 사라지면 다음으로 넘어가요.</>,
       ],
     },
     {
-      title: `${name}에 Supabase MCP 연결하기`,
-      items: mcpSteps(tool),
+      title: "프로젝트 폴더 만들고 문서 넣기",
+      items: [
+        <>
+          파일 탐색기(맥은 Finder)에서 새 폴더를 만들어요. 이름은 1번 Supabase 프로젝트와 똑같이 써요(예:{" "}
+          <code className={inlineCode}>gym-check</code>). 한글이나 띄어쓰기가 있으면 프로젝트를 만들 때 오류가 나요.
+        </>,
+        <>
+          받은 zip 파일을 풀어 나온 CLAUDE.md와 docs 폴더를 그대로 넣어요.
+          <pre className="mt-2.5 overflow-x-auto rounded-xl border bg-muted px-[18px] py-3.5 font-mono text-[12.5px] leading-[1.85] text-ink-2">
+            {FOLDER_TREE.replace("내-프로젝트", "gym-check")}
+          </pre>
+        </>,
+      ],
+    },
+    {
+      title: `${name}에서 폴더 열고 Supabase MCP 연결하기`,
+      items: openAndConnectSteps(tool),
     },
     {
       title: "프롬프트 넣기",
@@ -195,7 +225,8 @@ export function OneShotGuide({ tool }: { tool: string }) {
         이렇게 넣으세요
       </h2>
       <p className="mt-2 text-[14.5px] leading-[1.75] text-ink-2">
-        Supabase 계정을 만들고 {name}에 MCP(AI가 Supabase를 직접 다루게 해 주는 연결)를 붙인 뒤, 프롬프트를 넣으면 돼요.
+        Supabase에서 프로젝트를 만들고, 같은 이름의 폴더에 문서를 넣고, {name}에 MCP(AI가 Supabase를 직접 다루게 해
+        주는 연결)를 붙인 뒤 프롬프트를 넣으면 돼요.
       </p>
       <div className="mt-7">
         {guide.map((g, i) => (
