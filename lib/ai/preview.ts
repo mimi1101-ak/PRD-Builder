@@ -4,7 +4,14 @@ import { anthropic, AiError, supportsEffort, supportsServerFallback } from "@/li
 import { DOC_EFFORT, DOC_MODEL } from "@/lib/env";
 import { fill, promptSection } from "@/lib/prompts";
 import { splitKitHeader } from "@/lib/preview-doc";
-import { PREVIEW_SCREENS, PREVIEW_STAGES, type PreviewContent, type PreviewStage } from "@/lib/preview";
+import {
+  PREVIEW_KIT_LABELS,
+  PREVIEW_SCREENS,
+  PREVIEW_STAGES,
+  type PreviewContent,
+  type PreviewKit,
+  type PreviewStage,
+} from "@/lib/preview";
 import type { IdeaSummary } from "@/lib/domain";
 
 export type PreviewInput = { summary: IdeaSummary; prd: string };
@@ -107,23 +114,31 @@ async function requestOnce(request: string, onStage: (stage: PreviewStage) => vo
 }
 
 // 화면 미리보기 웹앱 만들기. onStage 는 각 화면·스크립트를 쓰기 시작할 때 한 번씩 불린다.
+// kit 을 주면 그 디자인 키트로 다시 만든다 (디자인 바꾸기).
 export async function generatePreview(
   input: PreviewInput,
   onStage: (stage: PreviewStage) => void,
   onRestart: () => void,
+  kit?: PreviewKit,
 ): Promise<PreviewContent> {
   const { summary } = input;
-  const request = fill(promptSection("preview.md", "request"), {
+  let request = fill(promptSection("preview.md", "request"), {
     title: summary.title || "(미정)",
     one_liner: summary.one_liner || "(미정)",
     design: summary.design.trim() || "(답 없음)",
     payment: summary.payment.trim() || "(답 없음)",
     prd: input.prd,
   });
+  if (kit) {
+    request += "\n\n" + fill(promptSection("preview.md", "redesign"), { kit, kit_label: PREVIEW_KIT_LABELS[kit] });
+  }
 
   for (let attempt = 0; attempt < 2; attempt++) {
     if (attempt > 0) onRestart();
-    const { kit, accent, html } = splitKitHeader(await requestOnce(request, onStage));
+    const parsed = splitKitHeader(await requestOnce(request, onStage));
+    const { accent, html } = parsed;
+    // 디자인을 골라 다시 만들 때는 모델이 다른 키트를 적어도 고른 키트로 맞춘다
+    const chosenKit = kit ?? parsed.kit;
     const issues = hardIssues(html);
     if (issues.length) {
       console.warn("[preview] check failed", attempt, issues);
@@ -131,7 +146,7 @@ export async function generatePreview(
     }
     const words = BANNED_WORDS.filter((w) => html.includes(w));
     if (words.length) console.warn("[preview] banned words", words);
-    return { version: 2, kit, accent, html: sanitize(html) };
+    return { version: 2, kit: chosenKit, accent, html: sanitize(html) };
   }
   throw new AiError("미리보기를 제대로 만들지 못했어요. 다시 시도해 주세요.");
 }

@@ -20,7 +20,10 @@ import { PRODUCTS } from "@/lib/domain";
 import { downloadBlob } from "@/lib/download";
 import {
   PREVIEW_FILE_PATH,
+  PREVIEW_KIT_DESCRIPTIONS,
+  PREVIEW_KIT_FONTS,
   PREVIEW_KIT_LABELS,
+  PREVIEW_KITS,
   PREVIEW_MESSAGE_FROM_APP,
   PREVIEW_MESSAGE_FROM_HOST,
   PREVIEW_REFERENCE_PROMPT,
@@ -40,19 +43,24 @@ type Phase =
   | { kind: "generating"; stages: PreviewStage[]; restarted: boolean }
   | { kind: "waiting" } // 다른 창에서 만드는 중
   | { kind: "failed"; message: string; code?: string }
-  | { kind: "ready"; doc: string; kit: PreviewKit | null };
+  | { kind: "ready"; doc: string; kit: PreviewKit | null; redesignUsed: boolean };
 
 type PreviewEvent =
   | { type: "stage"; stage: PreviewStage }
   | { type: "restart" }
-  | { type: "done"; doc: string; kit: PreviewKit; credits: number }
+  | { type: "done"; doc: string; kit: PreviewKit; credits?: number; redesignUsed?: boolean }
   | { type: "error"; message: string; retryable: boolean; code?: string };
+
+// 이름 뒤 조사: "잡지형으로", "앱형으로" (모두 받침 있는 이름이라 "으로")
+const kitWith = (kit: PreviewKit) => `${PREVIEW_KIT_LABELS[kit]}으로`;
 
 const STALE_LOCK_MS = 5.5 * 60 * 1000;
 
 function initialPhase(state: PreviewState | null): Phase {
   if (!state) return { kind: "intro" };
-  if (state.status === "ready" && state.doc) return { kind: "ready", doc: state.doc, kit: state.kit };
+  if (state.status === "ready" && state.doc) {
+    return { kind: "ready", doc: state.doc, kit: state.kit, redesignUsed: state.redesignUsed };
+  }
   if (state.status === "generating" && Date.now() - new Date(state.updatedAt).getTime() < STALE_LOCK_MS) {
     return { kind: "waiting" };
   }
@@ -80,6 +88,11 @@ export function PreviewView({
   const [credits, setCredits] = useState(initialCredits);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const inFlight = useRef(false);
+  // 디자인 바꾸기: 입혀 보는 디자인, 다시 만드는 중 진행, 실패 문구, 확인 창
+  const [trialKit, setTrialKit] = useState<PreviewKit | null>(null);
+  const [redesigning, setRedesigning] = useState<{ stages: PreviewStage[]; restarted: boolean } | null>(null);
+  const [redesignError, setRedesignError] = useState<string | null>(null);
+  const [redesignConfirm, setRedesignConfirm] = useState(false);
 
   // 크레딧이 바뀌면 헤더(서버 컴포넌트)의 숫자도 다시 그린다
   const router = useRouter();
@@ -142,7 +155,7 @@ export function PreviewView({
               setPhase({ kind: "generating", stages: [], restarted: true });
             } else if (ev.type === "done") {
               done = { doc: ev.doc, kit: ev.kit };
-              setCredits(ev.credits);
+              if (typeof ev.credits === "number") setCredits(ev.credits);
             } else if (ev.type === "error") failure = { message: ev.message, retryable: ev.retryable, code: ev.code };
           });
           if (!done && !failure) failure = { message: "연결이 끊겼어요. 다시 시도해 주세요.", retryable: true };
@@ -156,7 +169,7 @@ export function PreviewView({
       if (after === "waiting") return setPhase({ kind: "waiting" });
       const result = done as { doc: string; kit: PreviewKit } | null;
       if (result) {
-        setPhase({ kind: "ready", doc: result.doc, kit: result.kit });
+        setPhase({ kind: "ready", doc: result.doc, kit: result.kit, redesignUsed: false });
         toast.success("화면 미리보기가 만들어졌어요");
         return;
       }
@@ -170,6 +183,53 @@ export function PreviewView({
   function askGenerate() {
     if (isDeveloper) void generate();
     else setConfirmOpen(true);
+  }
+
+  // 고른 디자인으로 다시 만들기. 실패하면 지금 미리보기와 기회는 그대로 남는다
+  async function redesign() {
+    if (!trialKit || redesigning) return;
+    const kit = trialKit;
+    setRedesignConfirm(false);
+    setRedesignError(null);
+    setRedesigning({ stages: [], restarted: false });
+    let done: { doc: string; kit: PreviewKit } | null = null;
+    let failure: string | null = null;
+    try {
+      const res = await fetch("/api/preview/redesign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId, kit }),
+      });
+      if (!res.ok) {
+        failure = (await readJsonError(res)).message;
+      } else {
+        await readNdjson<PreviewEvent>(res, (ev) => {
+          if (ev.type === "stage") {
+            setRedesigning((r) => (r && !r.stages.includes(ev.stage) ? { ...r, stages: [...r.stages, ev.stage] } : r));
+          } else if (ev.type === "restart") setRedesigning({ stages: [], restarted: true });
+          else if (ev.type === "done") done = { doc: ev.doc, kit: ev.kit };
+          else if (ev.type === "error") failure = ev.message;
+        });
+        if (!done && !failure) failure = "연결이 끊겼어요. 다시 시도해 주세요.";
+      }
+    } catch {
+      failure = "연결이 끊겼어요. 다시 시도해 주세요.";
+    }
+    setRedesigning(null);
+    const result = done as { doc: string; kit: PreviewKit } | null;
+    if (result) {
+      setTrialKit(null);
+      setPhase({ kind: "ready", doc: result.doc, kit: result.kit, redesignUsed: true });
+      toast.success(`${kitWith(result.kit)} 다시 만들었어요`);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    setRedesignError(`${failure ?? "다시 만들지 못했어요."} 지금 미리보기와 디자인 바꾸기 기회는 그대로 남아 있어요.`);
+  }
+
+  function askRedesign() {
+    if (isDeveloper) void redesign();
+    else setRedesignConfirm(true);
   }
 
   return (
@@ -199,10 +259,32 @@ export function PreviewView({
 
         <div className="mt-11 border-t pt-10">
           {phase.kind === "ready" ? (
-            <>
-              <PreviewFrame doc={phase.doc} />
-              <ReferenceGuide doc={phase.doc} />
-            </>
+            redesigning ? (
+              <Progress
+                stages={redesigning.stages}
+                restarted={redesigning.restarted}
+                heading={trialKit ? `${kitWith(trialKit)} 다시 만들고 있어요. 1분 정도 걸려요.` : undefined}
+              />
+            ) : (
+              <>
+                {redesignError && (
+                  <p className="mb-8 flex max-w-[720px] items-start gap-2 text-sm">
+                    <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
+                    {redesignError}
+                  </p>
+                )}
+                <PreviewFrame doc={phase.doc} kit={phase.kit} trialKit={trialKit} />
+                <RedesignPanel
+                  currentKit={phase.kit}
+                  used={phase.redesignUsed && !isDeveloper}
+                  isDeveloper={isDeveloper}
+                  trialKit={trialKit}
+                  onTry={(kit) => setTrialKit(kit === phase.kit ? null : kit)}
+                  onStart={askRedesign}
+                />
+                <ReferenceGuide doc={phase.doc} />
+              </>
+            )
           ) : phase.kind === "generating" ? (
             <Progress stages={phase.stages} restarted={phase.restarted} />
           ) : phase.kind === "waiting" ? (
@@ -240,7 +322,8 @@ export function PreviewView({
             <DialogTitle className="font-display text-2xl font-light tracking-[-0.03em]">크레딧 1건을 사용할까요?</DialogTitle>
             <DialogDescription>
               이 프로젝트의 홈·요금·기능·결과 화면을 직접 눌러 볼 수 있는 미리보기와 HTML 파일을 만들어요. 문서 잠금 해제와는
-              따로 차감돼요. 한 번 만든 미리보기는 계속 볼 수 있어요.
+              따로 차감돼요. 한 번 만든 미리보기는 계속 볼 수 있고, 디자인이 마음에 들지 않으면 한 번은 다른 디자인으로 다시
+              만들 수 있어요(크레딧 차감 없음).
             </DialogDescription>
           </DialogHeader>
           <div className="rounded-xl border px-4 py-3 text-sm">
@@ -265,14 +348,112 @@ export function PreviewView({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={redesignConfirm} onOpenChange={setRedesignConfirm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl font-light tracking-[-0.03em]">
+              {trialKit ? `${kitWith(trialKit)} 다시 만들까요?` : "다시 만들까요?"}
+            </DialogTitle>
+            <DialogDescription>
+              고른 디자인에 맞게 화면 구성까지 새로 만들어요. 지금 미리보기는 새로 만든 것으로 바뀌고 되돌릴 수 없어요.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-xl border px-4 py-3 text-sm">
+            <b>디자인 바꾸기는 미리보기마다 한 번만 할 수 있어요.</b>
+            <p className="mt-1 text-xs text-muted-foreground">
+              크레딧은 차감되지 않아요. 만들지 못하면 지금 미리보기와 기회는 그대로 남아요.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRedesignConfirm(false)}>
+              취소
+            </Button>
+            <Button onClick={() => void redesign()}>다시 만들기</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
+  );
+}
+
+// 디자인이 마음에 들지 않을 때: 다섯 디자인 중 하나를 골라 지금 화면에 입혀 보고, 한 번 다시 만든다
+function RedesignPanel({
+  currentKit,
+  used,
+  isDeveloper,
+  trialKit,
+  onTry,
+  onStart,
+}: {
+  currentKit: PreviewKit | null;
+  used: boolean;
+  isDeveloper: boolean;
+  trialKit: PreviewKit | null;
+  onTry: (kit: PreviewKit) => void;
+  onStart: () => void;
+}) {
+  if (used) {
+    return (
+      <p className="mt-10 border-t pt-8 text-sm text-muted-foreground">
+        디자인 바꾸기를 이미 썼어요. 디자인 바꾸기는 미리보기마다 한 번만 할 수 있어요.
+      </p>
+    );
+  }
+  const shown = trialKit ?? currentKit;
+  return (
+    <section className="mt-14 border-t pt-10">
+      <div className="max-w-[640px]">
+        <h2 className="break-keep text-[20px] font-semibold tracking-[-0.02em]">디자인이 마음에 들지 않으면 한 번 바꿀 수 있어요</h2>
+        <p className="mt-3 break-keep text-[14.5px] leading-relaxed text-muted-foreground">
+          디자인을 누르면 지금 화면에 바로 입혀 볼 수 있어요. 마음에 드는 디자인으로 다시 만들면 그 디자인에 맞게 화면 구성까지
+          새로 짜요. 크레딧은 차감되지 않아요.
+          {isDeveloper && " 개발자 계정은 여러 번 바꿀 수 있어요."}
+        </p>
+      </div>
+      <div role="group" aria-label="디자인" className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+        {PREVIEW_KITS.map((kit) => (
+          <button
+            key={kit}
+            type="button"
+            aria-pressed={shown === kit}
+            onClick={() => onTry(kit)}
+            className={cn(
+              "rounded-xl border px-4 py-3 text-left transition-colors hover:border-foreground",
+              shown === kit && "border-foreground bg-foreground text-background",
+            )}
+          >
+            <span className="flex items-center justify-between gap-2 text-[14.5px] font-medium">
+              {PREVIEW_KIT_LABELS[kit]}
+              {kit === currentKit && <span className="mono-label text-[10px] opacity-70">지금</span>}
+            </span>
+            <span className={cn("mt-1 block text-[12.5px] leading-snug text-muted-foreground", shown === kit && "text-background/70")}>
+              {PREVIEW_KIT_DESCRIPTIONS[kit]}
+            </span>
+          </button>
+        ))}
+      </div>
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        <Button onClick={onStart} disabled={!trialKit || trialKit === currentKit}>
+          {trialKit && trialKit !== currentKit ? `${kitWith(trialKit)} 다시 만들기` : "바꿀 디자인을 골라 주세요"}
+        </Button>
+        {trialKit && (
+          <Button variant="ghost" onClick={() => currentKit && onTry(currentKit)}>
+            원래 디자인 보기
+          </Button>
+        )}
+        <span className="text-xs text-muted-foreground">
+          입혀 본 모습은 색·글꼴·모양만 바뀐 것이에요. 다시 만들면 구성까지 달라져요.
+        </span>
+      </div>
+    </section>
   );
 }
 
 const INTRO_POINTS = [
   { label: "홈, 요금, 기능, 결과 화면을 직접 눌러 보기", meta: "4+ screens" },
   { label: "입력하고 저장하고 결제하는 흐름이 가짜 데이터로 움직여요", meta: "live" },
-  { label: "PRD 톤에 맞춘 디자인, 휴대폰 크기로도 보기", meta: "5 styles" },
+  { label: "PRD 톤에 맞춘 디자인, 마음에 안 들면 한 번 바꾸기", meta: "5 styles" },
   { label: "HTML 파일로 받아 AI 코딩 도구의 디자인 참고로", meta: ".html" },
 ];
 
@@ -326,7 +507,7 @@ function Intro({
   );
 }
 
-function Progress({ stages, restarted }: { stages: PreviewStage[]; restarted: boolean }) {
+function Progress({ stages, restarted, heading }: { stages: PreviewStage[]; restarted: boolean; heading?: string }) {
   const current = stages[stages.length - 1];
   return (
     <section className="max-w-[560px]">
@@ -334,7 +515,7 @@ function Progress({ stages, restarted }: { stages: PreviewStage[]; restarted: bo
         <Loader2 className="size-4 animate-spin" />
         {restarted
           ? "검사에서 빠진 곳이 있어 한 번 더 만들고 있어요. 크레딧은 한 번만 차감돼요."
-          : "PRD를 읽고 화면과 동작을 만들고 있어요. 1분 정도 걸려요."}
+          : (heading ?? "PRD를 읽고 화면과 동작을 만들고 있어요. 1분 정도 걸려요.")}
       </p>
       <ol className="mt-6 border-t">
         {PREVIEW_STAGES.map((stage, i) => {
@@ -367,8 +548,32 @@ type Device = "desktop" | "mobile";
 // 격리된 프레임 안에서 미리보기 앱을 돌린다.
 // sandbox 에 allow-same-origin 이 없어 앱 코드는 dot.PRD 의 로그인 정보·화면에 손댈 수 없고,
 // 문서 안의 보안 정책(CSP)이 바깥 연결을 막는다. 화면 이름·오류만 postMessage 로 주고받는다.
-function PreviewFrame({ doc }: { doc: string }) {
+function PreviewFrame({
+  doc,
+  kit = null,
+  trialKit = null,
+}: {
+  doc: string;
+  // 지금 디자인과 입혀 보는 디자인 (디자인 바꾸기에서만)
+  kit?: PreviewKit | null;
+  trialKit?: PreviewKit | null;
+}) {
   const frame = useRef<HTMLIFrameElement>(null);
+  const shownKit = trialKit ?? kit;
+  const shownKitRef = useRef(shownKit);
+
+  // 입혀 보는 디자인이 바뀌면 프레임 안 앱에 알린다 (앱을 다시 불러오지 않고 색·글꼴·모양만 바꾼다)
+  const sendKit = useCallback((target: PreviewKit | null) => {
+    if (!target) return;
+    frame.current?.contentWindow?.postMessage(
+      { source: PREVIEW_MESSAGE_FROM_HOST, type: "kit", kit: target, font: PREVIEW_KIT_FONTS[target] },
+      "*",
+    );
+  }, []);
+  useEffect(() => {
+    shownKitRef.current = shownKit;
+    sendKit(shownKit);
+  }, [shownKit, sendKit]);
   const [screens, setScreens] = useState<Screen[]>(() => PREVIEW_SCREENS.map((name) => ({ name, title: PREVIEW_SCREEN_LABELS[name] })));
   const [current, setCurrent] = useState("home");
   const [device, setDevice] = useState<Device>("desktop");
@@ -379,13 +584,16 @@ function PreviewFrame({ doc }: { doc: string }) {
       if (e.source !== frame.current?.contentWindow) return;
       const data = e.data as { source?: string; type?: string; name?: string; screens?: Screen[] } | null;
       if (!data || data.source !== PREVIEW_MESSAGE_FROM_APP) return;
-      if (data.type === "ready" && Array.isArray(data.screens) && data.screens.length) setScreens(data.screens);
-      else if (data.type === "screen" && data.name) setCurrent(data.name);
+      if (data.type === "ready") {
+        if (Array.isArray(data.screens) && data.screens.length) setScreens(data.screens);
+        // 앱이 다시 뜨면(예: 새로 만든 문서) 입혀 보던 디자인을 다시 알린다
+        sendKit(shownKitRef.current);
+      } else if (data.type === "screen" && data.name) setCurrent(data.name);
       else if (data.type === "error") setErrors((n) => n + 1);
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, []);
+  }, [sendKit]);
 
   // 필수 화면 네 개를 먼저, AI 가 더 만든 화면은 뒤에
   const main = PREVIEW_SCREENS as readonly string[];

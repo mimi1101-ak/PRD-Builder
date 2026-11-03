@@ -113,6 +113,7 @@
    - 서버가 키트 CSS·글꼴·아이콘·도우미를 붙여 문서 한 장으로 조립(`lib/preview-doc.ts`)하고, 화면은 `sandbox="allow-scripts allow-forms"`(같은 출처 아님) iframe 의 srcdoc 으로 돌린다. 문서 안 CSP 가 바깥 연결·이미지·폼 전송을 막고 글꼴만 허용. 앱과 바깥 화면은 화면 이름·오류만 postMessage 로 주고받는다(위쪽 바로가기 탭 동기화). 실행 안전장치: `App.$` 는 없는 요소면 아무 일도 안 하는 대역을 돌려줘 한 줄 실수로 앱이 멈추지 않게 한다.
    - 검사(`lib/ai/preview.ts`): 화면 4개·스크립트가 없거나 금지 기능(fetch·저장소·location 변경 등)이 있으면 같은 요청 안에서 1번 다시 만든다(크레딧 차감 없음). 문서 구조를 흔드는 태그와 style 속성의 그라데이션·글꼴·외부 그림은 지운다. 구조화 출력은 형식이 커서 쓰지 않는다.
    - 같은 문서를 "HTML 파일로 받기"(preview.html)로 내려받고, `docs/preview.html` 에 넣어 AI 코딩 도구에 디자인 참고로 주는 한 줄(`PREVIEW_REFERENCE_PROMPT`)을 함께 보여 준다. 생성 문서(CLAUDE.md 등)는 바꾸지 않는다. 공유 링크는 없다.
+   - 디자인 바꾸기(2026-11-03 추가): 완성된 미리보기 아래에서 다섯 디자인 중 하나를 누르면 프레임 안 앱에 그 키트를 바로 입혀 보고(postMessage `kit`, 색·글꼴·모양만), "○○으로 다시 만들기"로 고른 키트를 지정해 처음부터 다시 만든다(`/api/preview/redesign`, 프롬프트 `redesign` 섹션). 미리보기마다 한 번, 크레딧 없음(개발자 계정은 제한 없음). 성공하면 미리보기를 바꾸고 `redesignUsed` 표시, 실패하면 원래 미리보기와 기회를 그대로 둔다. 잠금은 content 안 `redesignStartedAt`(5분) + updated_at 비교로 동시 실행을 막는다(마이그레이션 없음). 약관 제5조 4항·요금·크레딧 문구에 한 줄.
    - 저장: `previews.content = { version: 2, kit, accent, html }`. 첫 시안의 JSON 형식 저장본은 실패로 보고 다시 만들 수 있다(API 가 상태를 돌려 놓음).
    - 크레딧: `start_preview_generation`(중복 생성 잠금) → 생성 → `complete_preview`(저장 + 1건 차감을 한 번에, 개발자 계정은 차감 없음, `credit_used` 기록). 실패하면 차감 없음. `previews` 표는 서버만 읽고 쓴다(RLS 켜고 정책 없음).
    - 비용·시간(상위 모델, effort low): 1분 안팎, 한 번에 약 $0.17~0.22. 크레딧 1건(3,900원)에서 부가세·카드 수수료·AI 비용을 빼도 약 3,000원(79%)이 남는다.

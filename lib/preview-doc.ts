@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   PREVIEW_ACCENTS,
+  PREVIEW_KIT_FONTS,
   PREVIEW_KITS,
   type PreviewAccent,
   type PreviewContent,
@@ -14,15 +15,6 @@ import {
 
 const PRETENDARD =
   "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css";
-
-// 키트별 제목 글꼴 (모두 고딕 계열, 구글 폰트)
-const KIT_FONTS: Record<PreviewKit, string> = {
-  paper: "https://fonts.googleapis.com/css2?family=Gothic+A1:wght@600;700;800;900&display=swap",
-  soft: "https://fonts.googleapis.com/css2?family=Jua&display=swap",
-  console: "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap",
-  poster: "https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap",
-  night: "https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap",
-};
 
 // AI 가 쓴 코드가 밖으로 아무것도 보내지 못하게: 연결·이미지·폼 전송 막고, 글꼴만 허용
 const CSP = [
@@ -73,7 +65,7 @@ export function buildPreviewDoc(content: Pick<PreviewContent, "kit" | "accent" |
     `<meta name="viewport" content="width=device-width,initial-scale=1">` +
     `<meta http-equiv="Content-Security-Policy" content="${CSP}">` +
     `<title>화면 미리보기</title>` +
-    `<link rel="stylesheet" href="${PRETENDARD}"><link rel="stylesheet" href="${KIT_FONTS[content.kit]}">` +
+    `<link rel="stylesheet" href="${PRETENDARD}"><link rel="stylesheet" href="${PREVIEW_KIT_FONTS[content.kit]}">` +
     `<style>${kit.css}</style><script>${safeScript(kit.icons)}</script><script>${safeScript(kit.runtime)}</script>` +
     `</head><body>${content.html}</body></html>`
   );
@@ -96,7 +88,14 @@ export function readPreviewContent(raw: unknown): PreviewContent | null {
   const kit = PREVIEW_KITS.find((k) => k === r.kit);
   const accent = PREVIEW_ACCENTS.find((a) => a === r.accent);
   if (!kit || !accent) return null;
-  return { version: 2, kit, accent, html: r.html };
+  return {
+    version: 2,
+    kit,
+    accent,
+    html: r.html,
+    redesignUsed: r.redesignUsed === true,
+    redesignStartedAt: typeof r.redesignStartedAt === "string" ? r.redesignStartedAt : null,
+  };
 }
 
 // 만들기 전 화면에 보여 주는 예시 (시험용 PRD "점심투표"로 실제 프롬프트를 돌린 결과)

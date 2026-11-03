@@ -48,6 +48,7 @@ export async function loadPreview(projectId: string, withDoc = true): Promise<Pr
     status: data.status === "ready" && !content ? "failed" : (data.status as PreviewStatus),
     doc: content && withDoc ? buildPreviewDoc(content) : null,
     kit: content?.kit ?? null,
+    redesignUsed: content?.redesignUsed === true,
     updatedAt: data.updated_at as string,
   };
 }

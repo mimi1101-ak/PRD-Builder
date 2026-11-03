@@ -88,7 +88,7 @@ export default async function CreditsPage(props: PageProps<"/credits">) {
           </p>
           <p className="mt-1">
             <b className="text-foreground">화면 미리보기</b>: 프로젝트의 홈·요금·기능·결과 화면을 직접 눌러 볼 수 있는 웹앱과 HTML
-            파일로 만드는 데 1건을 따로 써요.
+            파일로 만드는 데 1건을 따로 써요. 디자인이 마음에 들지 않으면 한 번은 크레딧 없이 바꿀 수 있어요.
           </p>
           <p className="mt-1">
             <b className="text-foreground">무료</b>: MOMO와의 인터뷰는 무제한이고, PRD 앞부분(1~{PRD_PREVIEW_SECTIONS}장)은 바로 볼 수

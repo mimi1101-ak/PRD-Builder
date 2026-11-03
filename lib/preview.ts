@@ -13,6 +13,21 @@ export const PREVIEW_KIT_LABELS: Record<PreviewKit, string> = {
   poster: "포스터형",
   night: "어두운 고급형",
 };
+export const PREVIEW_KIT_DESCRIPTIONS: Record<PreviewKit, string> = {
+  paper: "크림색 종이, 큰 굵은 제목, 잉크 선",
+  soft: "흰 둥근 면, 큰 숫자, 아래 탭",
+  console: "왼쪽 메뉴, 촘촘한 표, 얇은 테두리",
+  poster: "굵은 테두리, 큰 색면, 스티커",
+  night: "검은 바탕, 가는 선, 얇고 큰 제목",
+};
+// 키트별 제목 글꼴 (모두 고딕 계열, 구글 폰트). 디자인을 바꿔 볼 때 화면에서도 쓴다
+export const PREVIEW_KIT_FONTS: Record<PreviewKit, string> = {
+  paper: "https://fonts.googleapis.com/css2?family=Gothic+A1:wght@600;700;800;900&display=swap",
+  soft: "https://fonts.googleapis.com/css2?family=Jua&display=swap",
+  console: "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap",
+  poster: "https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap",
+  night: "https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap",
+};
 
 // 강조색 (단색만, lib/preview-kit/kits.css)
 export const PREVIEW_ACCENTS = ["ink", "blue", "green", "teal", "orange", "red", "pink", "brown", "yellow"] as const;
@@ -37,11 +52,33 @@ export const PREVIEW_STAGE_LABELS: Record<PreviewStage, string> = {
 };
 
 // DB previews.content 형식
-export type PreviewContent = { version: 2; kit: PreviewKit; accent: PreviewAccent; html: string };
+// - redesignUsed: 다른 디자인으로 다시 만들기(무료, 한 번)를 썼는지
+// - redesignStartedAt: 다시 만드는 중 표시(중복 방지 잠금). 끝나거나 실패하면 지운다
+export type PreviewContent = {
+  version: 2;
+  kit: PreviewKit;
+  accent: PreviewAccent;
+  html: string;
+  redesignUsed?: boolean;
+  redesignStartedAt?: string | null;
+};
+
+// 다른 디자인으로 다시 만들기: 미리보기 하나에 한 번(개발자 계정은 제한 없음). 잠금은 5분이 지나면 풀린 것으로 본다
+export const REDESIGN_LOCK_MS = 5 * 60 * 1000;
+export function redesignBusy(content: Pick<PreviewContent, "redesignStartedAt">, now = Date.now()) {
+  const started = content.redesignStartedAt ? Date.parse(content.redesignStartedAt) : NaN;
+  return Number.isFinite(started) && now - started < REDESIGN_LOCK_MS;
+}
 
 // 브라우저로 보내는 상태: 키트를 붙여 조립한 문서 한 장
 export type PreviewStatus = "generating" | "ready" | "failed";
-export type PreviewState = { status: PreviewStatus; doc: string | null; kit: PreviewKit | null; updatedAt: string };
+export type PreviewState = {
+  status: PreviewStatus;
+  doc: string | null;
+  kit: PreviewKit | null;
+  redesignUsed: boolean;
+  updatedAt: string;
+};
 
 // 격리된 프레임과 바깥 화면이 주고받는 메시지 (lib/preview-kit/runtime.js 와 같은 이름)
 export const PREVIEW_MESSAGE_FROM_APP = "dotprd-preview";
