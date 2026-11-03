@@ -44,12 +44,13 @@ const DETAILS: { label: string; lines: string[] }[] = [
       "AI 코딩 도구용 안내서 보기 (CLAUDE.md)",
       "문서 3개 한 번에 내려받기 (PRD.md · TASKS.md · CLAUDE.md, zip 파일)",
       `섹션 다시 쓰기 ${REWRITES_PER_CREDIT}회`,
+      "또는 크레딧 1건으로 프로젝트 1개의 화면 미리보기 (홈·요금·기능·결과 화면을 직접 눌러 볼 수 있는 웹앱, 가짜 데이터, HTML 파일 받기)",
     ],
   },
   { label: "제공 시점", lines: ["결제가 끝나면 바로 계정에 크레딧 지급"] },
   {
     label: "서비스 제공 기간",
-    lines: ["크레딧 사용 기한 없음", "잠금 해제한 프로젝트는 서비스 운영 기간 내내 계속 보기 가능"],
+    lines: ["크레딧 사용 기한 없음", "잠금 해제한 프로젝트와 만든 화면 미리보기는 서비스 운영 기간 내내 계속 보기 가능"],
   },
   { label: "결제 수단", lines: ["신용·체크카드 (토스페이먼츠)"] },
 ];
@@ -65,7 +66,7 @@ export default async function PricingPage() {
         <h1 className="display-title mt-3 text-[clamp(36px,5vw,56px)]">요금 안내</h1>
         <p className="mt-4 text-sm leading-6 text-muted-foreground">
           인터뷰와 PRD 앞부분(1~{PRD_PREVIEW_SECTIONS}장)은 무료예요. PRD 나머지와 작업 단계(TASKS.md)·CLAUDE.md를 열 때
-          크레딧을 써요.
+          크레딧을 써요. 화면 미리보기를 만들 때는 1건을 따로 써요.
         </p>
 
         {/* 상품마다 가로 한 줄: 왼쪽 이미지, 오른쪽 이름·가격·구매 */}

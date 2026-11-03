@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Download, FileArchive, Loader2, Lock, MessageSquare, RotateCcw } from "lucide-react";
+import { AlertCircle, Download, FileArchive, Loader2, Lock, MessageSquare, PanelsTopLeft, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -402,6 +402,14 @@ export function ResultView({
                 <MessageSquare /> 대화 보기
               </Link>
             </Button>
+            {/* 화면 미리보기는 PRD 를 읽고 만들므로 PRD 가 나온 뒤에만 */}
+            {docs.prd.status === "ready" && (
+              <Button asChild variant="outline">
+                <Link href={`/p/${projectId}/preview`}>
+                  <PanelsTopLeft /> 화면 미리보기
+                </Link>
+              </Button>
+            )}
             <Button onClick={downloadAll} disabled={unlocked && !allReady}>
               {unlocked ? <FileArchive /> : <Lock />}세 파일 한 번에 받기 (.zip)
             </Button>

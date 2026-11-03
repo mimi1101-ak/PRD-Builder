@@ -87,6 +87,10 @@ export default async function CreditsPage(props: PageProps<"/credits">) {
             다운로드, 섹션 다시 쓰기 {REWRITES_PER_CREDIT}회. 한 번 연 프로젝트는 계속 볼 수 있어요.
           </p>
           <p className="mt-1">
+            <b className="text-foreground">화면 미리보기</b>: 프로젝트의 홈·요금·기능·결과 화면을 직접 눌러 볼 수 있는 웹앱과 HTML
+            파일로 만드는 데 1건을 따로 써요.
+          </p>
+          <p className="mt-1">
             <b className="text-foreground">무료</b>: MOMO와의 인터뷰는 무제한이고, PRD 앞부분(1~{PRD_PREVIEW_SECTIONS}장)은 바로 볼 수
             있어요.
           </p>

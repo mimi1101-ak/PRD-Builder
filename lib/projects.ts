@@ -9,6 +9,8 @@ import {
   type ProjectRow,
 } from "@/lib/domain";
 import { splitPrdPreview } from "@/lib/markdown";
+import { buildPreviewDoc, readPreviewContent } from "@/lib/preview-doc";
+import type { PreviewState, PreviewStatus } from "@/lib/preview";
 
 export async function loadMessages(projectId: string) {
   const admin = createAdminClient();
@@ -28,6 +30,26 @@ export async function loadDocuments(projectId: string) {
   const docs: Partial<Record<DocKind, DocumentRow>> = {};
   for (const row of data as DocumentRow[]) docs[row.kind] = row;
   return docs;
+}
+
+// 화면 미리보기 (없으면 null). 완성본은 키트를 붙여 문서 한 장으로 조립해 보낸다.
+// 형식이 다른 저장본(첫 시안의 JSON 형식)은 실패로 보고 다시 만들 수 있게 한다.
+export async function loadPreview(projectId: string, withDoc = true): Promise<PreviewState | null> {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("previews")
+    .select("status, content, updated_at")
+    .eq("project_id", projectId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  const content = data.status === "ready" ? readPreviewContent(data.content) : null;
+  return {
+    status: data.status === "ready" && !content ? "failed" : (data.status as PreviewStatus),
+    doc: content && withDoc ? buildPreviewDoc(content) : null,
+    kit: content?.kit ?? null,
+    updatedAt: data.updated_at as string,
+  };
 }
 
 export async function loadCredits(userId: string) {

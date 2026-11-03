@@ -1,0 +1,339 @@
+<!-- kit: poster | accent: orange -->
+<header class="topbar">
+  <a class="brand" data-go="home"><span class="brand-mark">점</span>점심투표</a>
+  <nav class="nav">
+    <a data-go="home">홈</a>
+    <a data-go="feature">투표 만들기</a>
+    <a data-go="vote">투표</a>
+    <a data-go="result">결과</a>
+    <a data-go="pricing">요금</a>
+  </nav>
+  <div class="topbar-end">
+    <button class="btn btn-primary btn-sm" data-go="feature">오늘 투표 만들기</button>
+  </div>
+</header>
+
+<section data-screen="home" data-title="홈">
+  <div class="band-accent">
+    <div class="page">
+      <div class="hero has-media">
+        <div>
+          <p class="label-sm">매일 11시 반, 단톡방에서</p>
+          <h1 class="hero-title">점심 메뉴를 링크 하나로 투표해요</h1>
+          <p class="hero-sub">방장이 회사 근처 식당 후보 3~6개를 올리면 팀원은 로그인 없이 한 번 눌러요. 11:40에 마감되면 1위 식당과 걸어서 몇 분인지 바로 나와요.</p>
+          <div class="hero-actions">
+            <button class="btn btn-primary btn-lg" data-go="feature">오늘 투표 만들기</button>
+            <button class="btn btn-secondary btn-lg" data-go="vote">팀원 화면 보기</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3 class="h3">11월 18일 화요일 점심</h3><span class="tag tag-accent">마감 11:40</span></div>
+          <ul class="list">
+            <li class="item"><span class="thumb">국</span><div class="item-main"><p class="item-title">을지로 순댓국집</p><p class="item-meta">도보 4분 · 5표</p><div class="progress"><span style="--v:50"></span></div></div></li>
+            <li class="item"><span class="thumb is-ink">면</span><div class="item-main"><p class="item-title">청계 소바하우스</p><p class="item-meta">도보 6분 · 3표</p><div class="progress"><span style="--v:30"></span></div></div></li>
+            <li class="item"><span class="thumb is-gray">밥</span><div class="item-main"><p class="item-title">삼각지 덮밥연구소</p><p class="item-meta">도보 3분 · 1표</p><div class="progress"><span style="--v:10"></span></div></div></li>
+            <li class="item"><span class="thumb is-gray">?</span><div class="item-main"><p class="item-title">아무거나</p><p class="item-meta">1표</p><div class="progress"><span style="--v:10"></span></div></div></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ticker"><div class="ticker-track"><span>순댓국</span><span>소바</span><span>덮밥</span><span>쌀국수</span><span>제육</span><span>아무거나</span></div></div>
+
+  <div class="page">
+    <div class="section">
+      <div class="split">
+        <div>
+          <p class="label-sm">이렇게 흘러가요</p>
+          <h2 class="h1">단톡방에 링크 하나만 보내요</h2>
+          <ol class="steps mt-4">
+            <li><b>회사 위치 정하기</b><span>반경 500m 식당 목록이 자동으로 떠요.</span></li>
+            <li><b>후보 3~6곳 고르기</b><span>마감 시간은 기본 11:40, 바꿀 수 있어요.</span></li>
+            <li><b>링크 공유</b><span>팀원은 로그인 없이 10초 안에 투표해요. 마감 전까지 바꿀 수 있어요.</span></li>
+            <li><b>1위 발표</b><span>동점이면 무작위 추첨으로 정해요.</span></li>
+          </ol>
+        </div>
+        <div class="panel">
+          <p class="label-sm">오늘의 1위</p>
+          <p class="display accent">순댓국</p>
+          <p class="lead">을지로 순댓국집 · 5표 · 도보 4분</p>
+          <span class="tag tag-accent mt-3">3일 연속 우승</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><h2 class="h2">11월 우리 팀 기록</h2><button class="btn btn-ghost btn-sm" data-go="team">팀 기록 보기</button></div>
+      <div class="stats" style="--cols:3">
+        <div><p class="stat-label">이번 달 투표</p><p class="stat-value">12<small>회</small></p><p class="stat-note">평일 기준</p></div>
+        <div><p class="stat-label">가 본 식당</p><p class="stat-value">8<small>곳</small></p><p class="stat-note">새로 간 곳 3곳</p></div>
+        <div><p class="stat-label">평균 참여</p><p class="stat-value">87%</p><p class="stat-note">팀원 8명</p></div>
+      </div>
+    </div>
+  </div>
+  <footer class="footer"><div class="page row-between"><span class="small">점심투표</span><button class="link small" data-go="pricing">요금 안내</button></div></footer>
+</section>
+
+<section data-screen="pricing" data-title="요금">
+  <div class="page">
+    <div class="section">
+      <p class="label-sm">요금</p>
+      <h1 class="display">팀이 커지면 팀 플랜</h1>
+      <p class="lead mt-3">팀원 6명 이상이면 팀 플랜을 써요. 무료 플랜의 팀원 수 한도는 아직 정하는 중이에요.</p>
+    </div>
+    <div class="plans">
+      <div class="plan">
+        <p class="plan-name">무료</p>
+        <p class="price">0<small>원/월</small></p>
+        <p class="plan-desc">작은 팀의 매일 점심 투표</p>
+        <ul class="plan-list"><li>오늘의 투표 만들기</li><li>로그인 없는 링크 투표</li><li>1위 발표와 득표 수</li></ul>
+        <button class="btn btn-secondary btn-block" data-go="feature">무료로 투표 만들기</button>
+      </div>
+      <div class="plan is-featured">
+        <p class="plan-name">팀 플랜</p>
+        <p class="price">9,900<small>원/월</small></p>
+        <p class="plan-desc">팀원 6명 이상 팀</p>
+        <ul class="plan-list"><li>무료 플랜 기능 전부</li><li>연속 우승 식당 표시</li><li>이번 달 팀 기록과 참여 현황</li><li>토스페이먼츠 정기결제</li></ul>
+        <button class="btn btn-primary btn-block" data-open="pay">팀 플랜 결제</button>
+      </div>
+    </div>
+    <p class="notice mt-6" id="paidNote" hidden>팀 플랜이 시작됐어요. 팀 기록을 볼 수 있어요.</p>
+  </div>
+</section>
+
+<dialog class="sheet" id="pay">
+  <div class="sheet-head"><h3 class="h3">팀 플랜 결제</h3><button class="icon-btn" data-close><i data-icon="x"></i></button></div>
+  <div class="sheet-body stack gap-4">
+    <dl class="kv"><div><dt>주문</dt><dd>점심투표 팀 플랜 (월 정기결제)</dd></div><div><dt>금액</dt><dd class="strong">9,900원</dd></div></dl>
+    <div class="field"><label class="label">카드 번호</label><input class="input" value="5412 7700 1234 5678"></div>
+    <div class="grid cols-2"><div class="field"><label class="label">유효기간</label><input class="input" value="08/29"></div><div class="field"><label class="label">CVC</label><input class="input" value="123"></div></div>
+    <p class="hint">미리보기라 실제로 결제되지 않아요.</p>
+  </div>
+  <div class="sheet-foot"><button class="btn btn-ghost" data-close>취소</button><button class="btn btn-primary" id="payBtn">결제하기</button></div>
+</dialog>
+
+<section data-screen="feature" data-title="투표 만들기">
+  <div class="page">
+    <div class="split-side">
+      <form id="newForm" class="stack gap-6" novalidate>
+        <div>
+          <p class="label-sm">방장</p>
+          <h1 class="display">오늘의 투표 만들기</h1>
+        </div>
+        <div class="field" id="fTitle">
+          <label class="label">투표 이름</label>
+          <input class="input" name="title" value="디자인팀 화요일 점심">
+          <p class="error">투표 이름을 적어 주세요.</p>
+        </div>
+        <div class="field">
+          <label class="label">회사 위치</label>
+          <input class="input" name="place" value="서울 중구 을지로 100">
+          <p class="hint">반경 500m 식당을 보여 줘요.</p>
+        </div>
+        <div class="field" id="fPick">
+          <label class="label">후보 식당 (3~6곳)</label>
+          <div class="choices is-grid" id="picks">
+            <button type="button" class="choice is-selected" data-multi data-name="을지로 순댓국집" data-min="4">을지로 순댓국집 · 4분</button>
+            <button type="button" class="choice is-selected" data-multi data-name="청계 소바하우스" data-min="6">청계 소바하우스 · 6분</button>
+            <button type="button" class="choice is-selected" data-multi data-name="삼각지 덮밥연구소" data-min="3">삼각지 덮밥연구소 · 3분</button>
+            <button type="button" class="choice" data-multi data-name="포베트남 쌀국수" data-min="7">포베트남 쌀국수 · 7분</button>
+            <button type="button" class="choice" data-multi data-name="명동 제육상회" data-min="5">명동 제육상회 · 5분</button>
+            <button type="button" class="choice" data-multi data-name="을지 마라공방" data-min="8">을지 마라공방 · 8분 <span class="tag tag-accent">새로 생김</span></button>
+            <button type="button" class="choice" data-multi data-name="수표교 김밥" data-min="2">수표교 김밥 · 2분</button>
+          </div>
+          <p class="error">후보는 3곳에서 6곳까지 골라 주세요.</p>
+        </div>
+        <div class="field" id="fTime">
+          <label class="label">마감 시간</label>
+          <input class="input" name="close" value="11:40">
+          <p class="error">마감 시간은 11:40처럼 적어 주세요.</p>
+        </div>
+        <button class="btn btn-primary btn-lg" id="makeBtn">링크 만들기</button>
+      </form>
+      <div class="panel">
+        <div class="panel-head"><h3 class="h3">고른 후보</h3><span class="tag" id="pickCount">3곳</span></div>
+        <ul class="list" id="pickList"></ul>
+        <p class="small muted mt-3">팀원은 이 후보와 "아무거나" 중 하나를 골라요.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-screen="vote" data-title="투표">
+  <div class="page-narrow">
+    <div class="section">
+      <p class="label-sm">팀원 화면 · 로그인 없이</p>
+      <h1 class="h1" id="voteTitle">디자인팀 화요일 점심</h1>
+      <p class="muted">마감 <b class="accent" id="voteClose">11:40</b>까지 바꿀 수 있어요.</p>
+      <ul class="list mt-4" id="voteList"></ul>
+      <button class="btn btn-ink btn-block mt-6" data-go="result">마감하고 결과 보기</button>
+    </div>
+  </div>
+</section>
+
+<section data-screen="result" data-title="결과">
+  <div class="band-accent">
+    <div class="page center">
+      <p class="label-sm">오늘의 1위</p>
+      <p class="display" id="winName">을지로 순댓국집</p>
+      <p class="big-number" id="winVotes">5표</p>
+      <p class="lead" id="winMeta">걸어서 4분 · 팀원 10명 중 10명 참여</p>
+      <span class="tag tag-ink mt-3" id="streak">3일 연속 우승</span>
+    </div>
+  </div>
+  <div class="page">
+    <div class="split">
+      <div class="panel">
+        <div class="panel-head"><h3 class="h3">득표 수</h3><span class="tag">마감됨</span></div>
+        <ul class="list" id="resList">
+          <li class="item"><div class="item-main"><p class="item-title">을지로 순댓국집</p><div class="progress"><span style="--v:50"></span></div></div><span class="item-end num">5표</span></li>
+          <li class="item"><div class="item-main"><p class="item-title">청계 소바하우스</p><div class="progress"><span style="--v:30"></span></div></div><span class="item-end num">3표</span></li>
+          <li class="item"><div class="item-main"><p class="item-title">삼각지 덮밥연구소</p><div class="progress"><span style="--v:10"></span></div></div><span class="item-end num">1표</span></li>
+          <li class="item"><div class="item-main"><p class="item-title">아무거나</p><div class="progress"><span style="--v:10"></span></div></div><span class="item-end num">1표</span></li>
+        </ul>
+      </div>
+      <div class="stack gap-4">
+        <h2 class="h2">다음엔 뭐 할까요</h2>
+        <button class="btn btn-primary btn-lg" id="shareBtn">결과 단톡방에 공유</button>
+        <button class="btn btn-secondary btn-lg" data-go="team">이번 달 팀 기록</button>
+        <button class="btn btn-ghost" data-go="feature">내일 투표 만들기</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-screen="team" data-title="팀 기록">
+  <div class="page">
+    <div class="section">
+      <p class="label-sm">디자인팀 · 11월</p>
+      <h1 class="display">많이 간 식당</h1>
+      <div class="panel mt-4">
+        <div class="bars"><span class="is-on" style="--v:90"></span><span style="--v:60"></span><span style="--v:45"></span><span style="--v:30"></span><span style="--v:15"></span></div>
+        <div class="bars-labels"><span>순댓국집</span><span>소바하우스</span><span>덮밥연구소</span><span>제육상회</span><span>쌀국수</span></div>
+      </div>
+    </div>
+    <div class="section">
+      <h2 class="h2">팀원별 투표 참여</h2>
+      <div class="table-wrap mt-3"><table class="table">
+        <thead><tr><th>이름</th><th class="right">참여</th><th>자주 고른 곳</th></tr></thead>
+        <tbody>
+          <tr><td>정하윤</td><td class="right num">12/12</td><td>을지로 순댓국집</td></tr>
+          <tr><td>문태오</td><td class="right num">11/12</td><td>청계 소바하우스</td></tr>
+          <tr><td>배수아</td><td class="right num">10/12</td><td>아무거나</td></tr>
+          <tr><td>엄도겸</td><td class="right num">9/12</td><td>삼각지 덮밥연구소</td></tr>
+          <tr><td>한채린</td><td class="right num">7/12</td><td>명동 제육상회</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function(){
+  var picks = App.$("#picks");
+  function selected(){
+    return App.$$("#picks .choice.is-selected").map(function(b){return {name:b.dataset.name,min:+b.dataset.min};});
+  }
+  function drawPicks(){
+    var s = selected();
+    App.$("#pickCount").textContent = s.length + "곳";
+    App.$("#pickList").innerHTML = s.map(function(r){
+      return '<li class="item"><span class="thumb">'+App.escape(r.name.slice(0,1))+'</span><div class="item-main"><p class="item-title">'+App.escape(r.name)+'</p><p class="item-meta">도보 '+r.min+'분</p></div></li>';
+    }).join("");
+  }
+  picks.addEventListener("click", function(){ setTimeout(drawPicks, 0); });
+  drawPicks();
+
+  App.$("#makeBtn").addEventListener("click", function(e){
+    e.preventDefault();
+    var d = App.formData(App.$("#newForm"));
+    var s = selected();
+    var ok = true;
+    var t = !d.title || !d.title.trim();
+    App.$("#fTitle").classList.toggle("is-invalid", t); if(t) ok=false;
+    var p = s.length < 3 || s.length > 6;
+    App.$("#fPick").classList.toggle("is-invalid", p); if(p) ok=false;
+    var tm = !/^([01]?\d|2[0-3]):[0-5]\d$/.test((d.close||"").trim());
+    App.$("#fTime").classList.toggle("is-invalid", tm); if(tm) ok=false;
+    if(!ok) return;
+    App.busy(e.currentTarget, 700).then(function(){
+      App.state.title = d.title.trim();
+      App.state.close = d.close.trim();
+      App.state.cands = s;
+      var base = [4,3,2,1,1,0];
+      App.state.votes = s.map(function(_,i){return base[i]||0;});
+      App.state.any = 1;
+      App.state.my = -1;
+      App.toast("링크를 만들었어요. 팀원 화면에서 투표해 보세요.");
+      App.go("vote");
+    });
+  });
+
+  function ensure(){
+    if(!App.state.cands){
+      App.state.title = "디자인팀 화요일 점심";
+      App.state.close = "11:40";
+      App.state.cands = [{name:"을지로 순댓국집",min:4},{name:"청계 소바하우스",min:6},{name:"삼각지 덮밥연구소",min:3}];
+      App.state.votes = [4,3,1];
+      App.state.any = 1;
+      App.state.my = -1;
+    }
+  }
+  function drawVote(){
+    ensure();
+    var st = App.state;
+    App.$("#voteTitle").textContent = st.title;
+    App.$("#voteClose").textContent = st.close;
+    var rows = st.cands.map(function(c,i){return {name:c.name,meta:"도보 "+c.min+"분",v:st.votes[i]+(st.my===i?1:0),i:i};});
+    rows.push({name:"아무거나",meta:"어디든 좋아요",v:st.any+(st.my==="any"?1:0),i:"any"});
+    App.$("#voteList").innerHTML = rows.map(function(r){
+      var on = st.my===r.i;
+      return '<li class="item is-clickable" data-i="'+r.i+'"><span class="thumb'+(on?'':' is-gray')+'">'+(on?'<i data-icon="check"></i>':App.escape(r.name.slice(0,1)))+'</span><div class="item-main"><p class="item-title">'+App.escape(r.name)+'</p><p class="item-meta">'+r.meta+'</p></div><span class="item-end num'+(on?' accent strong':'')+'">'+r.v+'표</span></li>';
+    }).join("");
+  }
+  App.$("#voteList").addEventListener("click", function(e){
+    var li = e.target.closest("[data-i]"); if(!li) return;
+    var i = li.dataset.i === "any" ? "any" : +li.dataset.i;
+    App.state.my = App.state.my===i ? -1 : i;
+    drawVote();
+    App.toast(App.state.my===-1 ? "투표를 취소했어요." : "투표했어요. 마감 전까지 바꿀 수 있어요.");
+  });
+  App.onScreen("vote", drawVote);
+
+  App.onScreen("result", function(){
+    if(!App.state.cands) return;
+    var st = App.state;
+    var rows = st.cands.map(function(c,i){return {name:c.name,min:c.min,v:st.votes[i]+(st.my===i?1:0)};});
+    var anyV = st.any+(st.my==="any"?1:0);
+    var max = Math.max.apply(null, rows.map(function(r){return r.v;}));
+    var tops = rows.filter(function(r){return r.v===max;});
+    var win = tops[Math.floor(Math.random()*tops.length)];
+    var total = rows.reduce(function(a,r){return a+r.v;},0)+anyV;
+    App.$("#winName").textContent = win.name;
+    App.$("#winVotes").textContent = win.v+"표";
+    App.$("#winMeta").textContent = "걸어서 "+win.min+"분 · 총 "+total+"표"+(tops.length>1?" · 동점이라 추첨으로 정했어요":"");
+    var streak = win.name==="을지로 순댓국집";
+    App.$("#streak").textContent = streak ? "3일 연속 우승" : "오늘 처음 1위";
+    var list = rows.slice().sort(function(a,b){return b.v-a.v;});
+    list.push({name:"아무거나",v:anyV});
+    App.$("#resList").innerHTML = list.map(function(r){
+      var pct = total ? Math.round(r.v/total*100) : 0;
+      return '<li class="item"><div class="item-main"><p class="item-title">'+App.escape(r.name)+'</p><div class="progress"><span style="--v:'+pct+'"></span></div></div><span class="item-end num">'+r.v+'표</span></li>';
+    }).join("");
+  });
+
+  App.$("#shareBtn").addEventListener("click", function(e){
+    App.busy(e.currentTarget, 500).then(function(){ App.toast("결과 링크를 복사했어요. 단톡방에 붙여 넣어 주세요."); });
+  });
+
+  App.$("#payBtn").addEventListener("click", function(e){
+    App.busy(e.currentTarget, 900).then(function(){
+      App.close();
+      App.$("#paidNote").hidden = false;
+      App.toast("팀 플랜 결제가 끝났어요.");
+      App.go("team");
+    });
+  });
+})();
+</script>

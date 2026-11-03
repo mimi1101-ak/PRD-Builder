@@ -24,7 +24,7 @@ function loadSections(file: string): Record<string, string> {
   return sections;
 }
 
-export function promptSection(file: "interview.md" | "documents.md", name: string): string {
+export function promptSection(file: "interview.md" | "documents.md" | "preview.md", name: string): string {
   const section = loadSections(file)[name];
   if (section === undefined) {
     throw new Error(`lib/prompts/${file} 에 "${name}" 섹션이 없습니다.`);

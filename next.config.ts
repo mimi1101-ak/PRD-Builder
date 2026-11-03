@@ -14,9 +14,10 @@ const SECURITY_HEADERS = [
 ];
 
 const nextConfig: NextConfig = {
-  // lib/prompts/*.md 는 서버에서 파일로 읽으므로 배포 번들에 꼭 포함시킨다.
+  // lib/prompts/*.md 와 화면 미리보기 키트(lib/preview-kit)는 서버에서 파일로 읽으므로 배포 번들에 꼭 포함시킨다.
   outputFileTracingIncludes: {
-    "/api/**/*": ["./lib/prompts/**/*.md"],
+    "/api/**/*": ["./lib/prompts/**/*.md", "./lib/preview-kit/**/*"],
+    "/p/**/*": ["./lib/preview-kit/**/*"],
   },
   // 응답에 "Next.js 로 만든 사이트"라고 알리지 않는다
   poweredByHeader: false,
