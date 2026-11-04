@@ -20,8 +20,8 @@ export default function HomePage() {
   return (
     <>
       <main className="relative w-full overflow-x-clip">
-        <div className="mx-auto w-full max-w-[1280px] px-4 pt-2 sm:px-8 lg:px-12">
-          <section className="relative flex h-[clamp(300px,44svh,380px)] flex-col min-[521px]:h-[clamp(420px,calc(100svh-330px),600px)]">
+        <div className="mx-auto w-full max-w-[1280px] px-4 pt-8 sm:px-8 min-[521px]:pt-12 lg:px-12">
+          <section className="relative flex h-[clamp(300px,44svh,380px)] flex-col min-[521px]:h-[clamp(420px,calc(100svh-370px),600px)]">
             <BlackHole className="absolute -top-6 left-1/2 h-[calc(100%+4rem)] w-screen -translate-x-1/2" />
             <h1 className="display-title relative z-10 grid flex-1 grid-rows-[auto_1fr_auto] pt-3 text-[clamp(26px,7vw,92px)] min-[521px]:pt-[18px]">
               <span className={`rise justify-self-start [animation-delay:80ms] ${glow}`}>흩어진 아이디어를,</span>
